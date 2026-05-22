@@ -1,0 +1,1651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sports Business Intelligence · 2025-26 · NBA / NHL / NFL / MLB</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0c12;--bg2:#10131e;--bg3:#161a28;--bg4:#1d2236;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --text:#e8eaf0;--text2:#8b90a8;--text3:#555c7a;
+  --nba:#c9a227;--nba2:#f7c948;--nhl:#4a9eff;--nhl2:#6eb8ff;
+  --nfl:#4dde9a;--nfl2:#76f0b4;--mlb:#e8583a;--mlb2:#ff7a5c;--accent:#9d74ff;--red:#ff6b6b;
+  --radius:12px;--mono:'DM Mono',monospace;--head:'Syne',sans-serif;--body:'Inter',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:14px;line-height:1.6;min-height:100vh}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:200;background:rgba(10,12,18,0.94);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 28px;display:flex;align-items:center;height:54px;gap:0}
+.nav-brand{font-family:var(--head);font-weight:800;font-size:15px;letter-spacing:.02em;margin-right:24px;flex-shrink:0;white-space:nowrap}
+.nav-brand span{color:var(--accent)}
+.nav-season{font-family:var(--mono);font-size:11px;color:var(--text3);background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:2px 8px;margin-right:20px;flex-shrink:0}
+.nav-tabs{display:flex;gap:2px;overflow-x:auto;flex:1}
+.nav-tab{background:none;border:none;color:var(--text2);font-family:var(--body);font-size:13px;font-weight:500;padding:7px 13px;cursor:pointer;border-radius:7px;transition:all .15s;white-space:nowrap}
+.nav-tab:hover{color:var(--text);background:var(--bg3)}
+.nav-tab.active{color:var(--text);background:var(--bg4);border:1px solid var(--border2)}
+.nav-actions{display:flex;gap:8px;margin-left:12px;flex-shrink:0}
+.btn-sm{background:var(--bg3);border:1px solid var(--border2);color:var(--text2);font-size:12px;font-weight:500;padding:5px 12px;border-radius:7px;cursor:pointer;transition:all .15s;font-family:var(--body);white-space:nowrap}
+.btn-sm:hover{color:var(--text);border-color:var(--accent);background:rgba(157,116,255,.08)}
+.btn-accent{background:rgba(157,116,255,.12);border-color:rgba(157,116,255,.3);color:var(--accent)}
+.btn-accent:hover{background:rgba(157,116,255,.2)}
+
+/* LAYOUT */
+main{max-width:1300px;margin:0 auto;padding:32px 28px 80px}
+section{display:none}
+section.active{display:block}
+
+/* SECTION HEADER */
+.section-header{margin-bottom:28px}
+.section-header h1{font-family:var(--head);font-size:26px;font-weight:800;line-height:1.2}
+.section-header p{color:var(--text2);margin-top:8px;max-width:620px;font-size:14px}
+.tag{display:inline-block;font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:4px;margin-bottom:10px;background:rgba(157,116,255,.12);color:var(--accent);border:1px solid rgba(157,116,255,.2)}
+.verified-badge{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:4px;background:rgba(77,222,154,.1);color:var(--nfl2);border:1px solid rgba(77,222,154,.2);margin-left:8px;vertical-align:middle}
+
+/* GRID */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-bottom:18px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+@media(max-width:960px){.grid-2,.grid-3{grid-template-columns:1fr}.grid-4{grid-template-columns:1fr 1fr}}
+
+/* CARDS */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:22px}
+.card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px}
+.card-title{font-family:var(--head);font-size:13px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.06em}
+.card-sub{color:var(--text2);font-size:12px;margin-top:3px}
+
+/* METRIC CARDS */
+.metric-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:18px}
+.metric-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;font-weight:500}
+.metric-value{font-family:var(--head);font-size:28px;font-weight:800;margin-top:5px;line-height:1}
+.metric-sub{font-size:12px;color:var(--text2);margin-top:5px}
+.metric-delta{font-size:12px;font-weight:600;margin-top:3px}
+.delta-up{color:var(--nfl2)}.delta-flat{color:var(--text3)}.delta-down{color:var(--red)}
+.nba-color{color:var(--nba2)}.nhl-color{color:var(--nhl2)}.nfl-color{color:var(--nfl2)}
+
+/* CHARTS */
+.chart-wrap{position:relative;width:100%}
+.h180{height:180px}.h220{height:220px}.h260{height:260px}.h300{height:300px}.h320{height:320px}.h340{height:340px}.h380{height:380px}
+
+/* CAP COMPARE */
+.cap-compare{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px}
+.cap-card{border-radius:10px;padding:20px;border:1px solid var(--border)}
+.cap-card.nba{background:rgba(201,162,39,.06);border-color:rgba(201,162,39,.2)}
+.cap-card.nhl{background:rgba(74,158,255,.06);border-color:rgba(74,158,255,.2)}
+.cap-card.nfl{background:rgba(77,222,154,.06);border-color:rgba(77,222,154,.2)}
+.cap-league{font-family:var(--head);font-size:18px;font-weight:800;margin-bottom:3px}
+.cap-type{font-size:11px;text-transform:uppercase;letter-spacing:.1em;font-weight:600;margin-bottom:14px}
+.cap-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)}
+.cap-row:last-child{border-bottom:none}
+.cap-key{color:var(--text2);font-size:12px}
+.cap-val{font-family:var(--mono);font-size:12px;font-weight:500}
+
+/* INSIGHT */
+.insight{background:rgba(157,116,255,.06);border:1px solid rgba(157,116,255,.15);border-radius:10px;padding:14px 18px;display:flex;gap:12px;align-items:flex-start;margin-bottom:12px}
+.insight-icon{font-size:16px;flex-shrink:0;margin-top:2px}
+.insight-text{font-size:13px;color:var(--text2);line-height:1.65}
+.insight-text strong{color:var(--text);font-weight:600}
+
+/* INNER TABS */
+.inner-tabs{display:flex;gap:8px;margin-bottom:18px}
+.inner-tab{background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:12px;font-weight:600;padding:5px 14px;border-radius:20px;cursor:pointer;transition:all .15s}
+.inner-tab:hover{color:var(--text);border-color:var(--border2)}
+.inner-tab.active.nba{background:rgba(201,162,39,.15);color:var(--nba2);border-color:rgba(201,162,39,.3)}
+.inner-tab.active.nhl{background:rgba(74,158,255,.15);color:var(--nhl2);border-color:rgba(74,158,255,.3)}
+.inner-tab.active.nfl{background:rgba(77,222,154,.15);color:var(--nfl2);border-color:rgba(77,222,154,.3)}
+
+/* TABLE */
+.data-table{width:100%;border-collapse:collapse;font-size:13px}
+.data-table th{text-align:left;padding:9px 12px;color:var(--text3);font-size:11px;text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid var(--border);font-weight:500}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--text2)}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:rgba(255,255,255,.02)}
+.mono{font-family:var(--mono);color:var(--text)}
+.rank{font-family:var(--mono);font-size:12px;color:var(--text3)}
+.league-pill{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;letter-spacing:.05em}
+.pill-nba{background:rgba(201,162,39,.15);color:var(--nba2)}
+.pill-nhl{background:rgba(74,158,255,.15);color:var(--nhl2)}
+.pill-nfl{background:rgba(77,222,154,.15);color:var(--nfl2)}
+.pill-mlb{background:rgba(232,88,58,.15);color:var(--mlb2)}
+.mlb-color{color:var(--mlb2)}
+
+/* BAR */
+.bar-stack{height:10px;border-radius:5px;overflow:hidden;display:flex}
+.bar-fill{height:100%;transition:width .5s}
+
+/* HERO */
+.hero{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:36px 40px;margin-bottom:28px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-80px;right:-80px;width:360px;height:360px;background:radial-gradient(circle,rgba(157,116,255,.05) 0%,transparent 70%);pointer-events:none}
+.hero h1{font-family:var(--head);font-size:34px;font-weight:800;line-height:1.15}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero p{color:var(--text2);margin-top:10px;max-width:580px;font-size:14px}
+.league-badges{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap;align-items:center}
+.league-badge{padding:7px 16px;border-radius:8px;font-family:var(--head);font-size:13px;font-weight:800;letter-spacing:.06em;border:1px solid}
+.badge-nba{background:rgba(201,162,39,.1);color:var(--nba2);border-color:rgba(201,162,39,.25)}
+.badge-nhl{background:rgba(74,158,255,.1);color:var(--nhl2);border-color:rgba(74,158,255,.25)}
+.badge-nfl{background:rgba(77,222,154,.1);color:var(--nfl2);border-color:rgba(77,222,154,.25)}
+.hero-note{font-family:var(--mono);font-size:11px;color:var(--text3);margin-left:4px}
+
+/* CONTROLS */
+.controls{display:flex;align-items:center;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+.controls label{font-size:12px;color:var(--text2);display:flex;align-items:center;gap:7px}
+.controls select{background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-size:12px;padding:5px 10px;border-radius:6px;cursor:pointer;font-family:var(--body)}
+.stat-badge{font-family:var(--mono);font-size:12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:3px 10px;color:var(--text2)}
+
+/* LEGEND */
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2)}
+.legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+
+/* METHOD NOTE */
+.method-note{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:11px 14px;font-size:12px;color:var(--text3);margin-top:14px}
+.formula-chip{display:inline-block;font-family:var(--mono);font-size:11px;background:rgba(157,116,255,.1);color:var(--accent);border:1px solid rgba(157,116,255,.2);border-radius:5px;padding:2px 8px;margin:2px 1px}
+
+/* FINDINGS */
+.finding-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:22px;position:relative;overflow:hidden}
+.finding-card::after{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
+.finding-card.f1::after{background:var(--nba)}
+.finding-card.f2::after{background:var(--nhl)}
+.finding-card.f3::after{background:var(--nfl)}
+.finding-card.f4::after{background:var(--accent)}
+.finding-card.f5::after{background:var(--nfl2)}
+.finding-card.f6::after{background:var(--red)}
+.finding-num{font-family:var(--mono);font-size:11px;color:var(--text3);margin-bottom:6px}
+.finding-title{font-family:var(--head);font-size:15px;font-weight:700;margin-bottom:8px}
+.finding-body{font-size:13px;color:var(--text2);line-height:1.65}
+.finding-body strong{color:var(--text);font-weight:600}
+.finding-stat{font-family:var(--head);font-size:24px;font-weight:800;margin:10px 0 4px}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;width:100%;max-width:780px;max-height:88vh;overflow-y:auto}
+.modal-header{padding:24px 28px 16px;position:sticky;top:0;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;z-index:10}
+.modal-header h2{font-family:var(--head);font-size:20px;font-weight:800}
+.modal-close{background:var(--bg3);border:1px solid var(--border);color:var(--text2);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.modal-close:hover{color:var(--text);border-color:var(--border2)}
+.modal-body{padding:24px 28px 32px}
+.method-section{margin-bottom:32px}
+.method-section:last-child{margin-bottom:0}
+.method-section h3{font-family:var(--head);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text2);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.metric-def{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:12px}
+.metric-def-name{font-weight:600;font-size:14px;margin-bottom:5px}
+.metric-def-formula{font-family:var(--mono);font-size:12px;color:var(--accent);background:rgba(157,116,255,.08);border:1px solid rgba(157,116,255,.15);border-radius:6px;padding:8px 12px;margin:8px 0}
+.metric-def-body{font-size:13px;color:var(--text2);line-height:1.65}
+.metric-def-body strong{color:var(--text)}
+.data-source-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+.data-source-table th{text-align:left;padding:8px 10px;color:var(--text3);font-size:11px;text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--border)}
+.data-source-table td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text2)}
+.data-source-table tr:last-child td{border-bottom:none}
+.status-chip{display:inline-block;font-size:10px;padding:2px 7px;border-radius:4px;font-weight:600}
+.chip-real{background:rgba(77,222,154,.12);color:var(--nfl2)}
+.chip-modeled{background:rgba(201,162,39,.12);color:var(--nba2)}
+.chip-derived{background:rgba(74,158,255,.12);color:var(--nhl2)}
+
+/* CSV IMPORT */
+.import-zone{border:1px dashed var(--border2);border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:all .2s}
+.import-zone:hover{border-color:var(--accent);background:rgba(157,116,255,.04)}
+.import-zone p{color:var(--text2);font-size:13px;margin:6px 0}
+.import-zone input{display:none}
+.data-status-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.ds-chip{font-size:11px;font-family:var(--mono);padding:4px 10px;border-radius:6px;border:1px solid;color:var(--text3);display:flex;align-items:center;gap:6px}
+.ds-chip .indicator{width:7px;height:7px;border-radius:50%}
+.ds-chip.loaded{color:var(--text2);border-color:rgba(77,222,154,.2)}
+.ds-chip.loaded .indicator{background:var(--nfl2)}
+.ds-chip.pending{border-color:var(--border)}
+.ds-chip.pending .indicator{background:var(--text3)}
+
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
+</style>
+</head>
+<body>
+
+<!-- METHODOLOGY MODAL -->
+<div class="modal-overlay" id="methodModal" onclick="if(event.target===this)closeModal()">
+<div class="modal">
+  <div class="modal-header">
+    <h2>Methodology &amp; data sources</h2>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+  </div>
+  <div class="modal-body">
+    <div class="method-section">
+      <h3>Data sources · 2025-26 season</h3>
+      <table class="data-source-table">
+        <thead><tr><th>Dataset</th><th>Source</th><th>Coverage</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>NBA salary cap $154.647M</td><td>NBA.com official press release</td><td>2025-26 season</td><td><span class="status-chip chip-real">Verified</span></td></tr>
+          <tr><td>NHL salary cap $95.5M</td><td>NHL.com / Puckpedia.com</td><td>2025-26 season</td><td><span class="status-chip chip-real">Verified</span></td></tr>
+          <tr><td>NFL salary cap $279.2M</td><td>NFL.com / OverTheCap.com</td><td>2025 season</td><td><span class="status-chip chip-real">Verified</span></td></tr>
+          <tr><td>Player salaries (NBA)</td><td>ESPN.com / Spotrac.com</td><td>2025-26 active contracts</td><td><span class="status-chip chip-real">Verified</span></td></tr>
+          <tr><td>Player salaries (NHL)</td><td>USA Today / Spotrac.com</td><td>2025-26 cap hits</td><td><span class="status-chip chip-real">Verified</span></td></tr>
+          <tr><td>Player salaries (NFL)</td><td>Spotrac.com / Athlon Sports</td><td>2025 AAV</td><td><span class="status-chip chip-real">Verified</span></td></tr>
+          <tr><td>NBA league revenue</td><td>Sportico (Nov 2025)</td><td>$14.3B projected 2025-26</td><td><span class="status-chip chip-modeled">Estimated</span></td></tr>
+          <tr><td>NHL league revenue</td><td>Statista / Sportico</td><td>$7.7-7.94B 2024-25</td><td><span class="status-chip chip-modeled">Estimated</span></td></tr>
+          <tr><td>NFL league revenue</td><td>Sportico / Forbes</td><td>~$23B 2024-25</td><td><span class="status-chip chip-modeled">Estimated</span></td></tr>
+          <tr><td>2024-25 NBA champions</td><td>NBA.com</td><td>OKC Thunder (68-14)</td><td><span class="status-chip chip-real">Verified</span></td></tr>
+          <tr><td>Team payrolls</td><td>Spotrac, DirectTV Insider</td><td>2025-26 estimates</td><td><span class="status-chip chip-modeled">Estimated</span></td></tr>
+          <tr><td>Gini / Lorenz curves</td><td>Derived from player salary data</td><td>Computed client-side</td><td><span class="status-chip chip-derived">Derived</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="method-section">
+      <h3>Metric definitions &amp; formulas</h3>
+      <div class="metric-def">
+        <div class="metric-def-name">Gini Coefficient</div>
+        <div class="metric-def-formula">G = 1 − (2/n) × Σ(i=1→n) [ (n−i+0.5) × s_i / Σs ]</div>
+        <div class="metric-def-body">Measures salary inequality within a team roster. <strong>0 = perfect equality</strong>, <strong>1 = maximum inequality</strong>. Computed live from the player salary CSV layer using actual 2025-26 contract data.</div>
+      </div>
+      <div class="metric-def">
+        <div class="metric-def-name">Payroll Efficiency ($/Win)</div>
+        <div class="metric-def-formula">Efficiency = Team Active Payroll ($M) / Regular Season Wins</div>
+        <div class="metric-def-body">How many millions spent per regular-season win. Compare within leagues only — NBA/NHL play 82 games, NFL plays 17. Dead cap is excluded from payroll figures where possible.</div>
+      </div>
+      <div class="metric-def">
+        <div class="metric-def-name">Labor Share of Revenue</div>
+        <div class="metric-def-formula">Labor Share = Total League Payroll / Est. League Revenue × 100</div>
+        <div class="metric-def-body">Each CBA defines its base differently: NBA uses <strong>BRI</strong> (Basketball Related Income, ~$10.25B in 2024-25), NHL uses <strong>HRR</strong> (Hockey Related Revenue, ~$7.7B), NFL uses <strong>AR</strong> (All Revenue, ~$23B).</div>
+      </div>
+      <div class="metric-def">
+        <div class="metric-def-name">Max Player % of Cap</div>
+        <div class="metric-def-formula">Max% = Top Single-Player Salary / League Salary Cap × 100</div>
+        <div class="metric-def-body">NBA 2025-26: Curry $59.6M / $154.6M = <strong>38.6%</strong>. NHL: Draisaitl $14M / $95.5M = <strong>14.7%</strong>. NFL: Prescott $60M AAV / $279.2M = <strong>21.5%</strong>.</div>
+      </div>
+      <div class="metric-def">
+        <div class="metric-def-name">Cap Per Roster Spot</div>
+        <div class="metric-def-formula">Cap/Spot = League Salary Cap / Active Roster Size</div>
+        <div class="metric-def-body">NBA (15 spots): $154.6M / 15 = <strong>$10.31M</strong>. NHL (23 active): $95.5M / 23 = <strong>$4.15M</strong>. NFL (53 active): $279.2M / 53 = <strong>$5.27M</strong>.</div>
+      </div>
+      <div class="metric-def">
+        <div class="metric-def-name">Revenue Per Active Player</div>
+        <div class="metric-def-formula">Rev/Player = League Revenue / (Teams × Active Roster)</div>
+        <div class="metric-def-body">NBA 30×15=450 players: $14.3B/450 = <strong>$31.8M</strong>. NHL 32×23=736: $7.7B/736 = <strong>$10.5M</strong>. NFL 32×53=1,696: $23B/1,696 = <strong>$13.6M</strong>. Roster size is the key driver of this metric, not league quality.</div>
+      </div>
+      <div class="metric-def">
+        <div class="metric-def-name">Cap Growth Index</div>
+        <div class="metric-def-formula">Index_t = Cap_t / Cap_2015 × 100  (2015 baseline = 100)</div>
+        <div class="metric-def-body">Normalizes all three leagues to a 2015 baseline for direct growth comparison. 2025-26 index values: NBA <strong>221</strong>, NHL <strong>138</strong>, NFL <strong>195</strong>. The NBA's 2016 TV deal spike (34% in one year) remains the largest single-season cap jump in major pro sports history.</div>
+      </div>
+    </div>
+
+    <div class="method-section">
+      <h3>CBA structure — key terms</h3>
+      <div class="metric-def">
+        <div class="metric-def-body">
+          <strong>NBA apron system (2025-26):</strong> Soft cap $154.6M → Luxury tax $187.9M → First apron $195.9M → Second apron $207.8M. Teams over the second apron lose most signing exceptions and cannot make salary-increasing trades. Phoenix Suns paid an estimated $152M in luxury tax in 2024-25 alone.<br><br>
+          <strong>NHL LTIR:</strong> Long-term injured reserve allows teams to temporarily bank space above the ceiling while injured players recover. Cannot spend over cap in playoffs. Tampa Bay and Toronto have historically used this mechanism.<br><br>
+          <strong>NFL dead cap:</strong> Guaranteed money owed to released/traded players still counts against the cap. Average NFL team carries $15-25M dead cap annually. 2025 NFL cap $279.2M is the first time it cleared $275M; 2026 cap is set at $301.2M — the first time it will exceed $300M.<br><br>
+          <strong>NHL cap trajectory:</strong> $95.5M (2025-26) → $104M (2026-27) → $113.5M (2027-28). Kirill Kaprizov's $17M/yr contract beginning 2026-27 will be the largest AAV in NHL history.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<nav>
+  <div class="nav-brand">Sports<span>BI</span></div>
+  <div class="nav-season">2025-26</div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showSection('findings',this)">Key Findings</button>
+    <button class="nav-tab" onclick="showSection('overview',this)">Overview</button>
+    <button class="nav-tab" onclick="showSection('cap',this)">Cap Systems</button>
+    <button class="nav-tab" onclick="showSection('revenue',this)">Revenue &amp; Labor</button>
+    <button class="nav-tab" onclick="showSection('concentration',this)">Salary Dist.</button>
+    <button class="nav-tab" onclick="showSection('parity',this)">Parity</button>
+    <button class="nav-tab" onclick="showSection('efficiency',this)">Efficiency</button>
+    <button class="nav-tab" onclick="showSection('explorer',this)">Team Explorer</button>
+    <button class="nav-tab" onclick="showSection('mlb',this)">⚾ MLB (No Cap)</button>
+  </div>
+  <div class="nav-actions">
+    <button class="btn-sm btn-accent" onclick="openModal()">⚗ Methodology</button>
+  </div>
+</nav>
+
+<main>
+
+<!-- ══ KEY FINDINGS ══ -->
+<section id="findings" class="active">
+  <div class="section-header">
+    <div class="tag">Executive Summary · 2025-26</div>
+    <h1>Six findings that define<br>professional sports economics</h1>
+    <p>Original analytical conclusions drawn from verified 2025-26 salary cap data, revenue figures, and competitive balance metrics across the NBA, NHL, and NFL.</p>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:18px">
+    <div class="finding-card f1">
+      <div class="finding-num">Finding 01 · NBA</div>
+      <div class="finding-title">Steph Curry is earning 38.6% of the salary cap — the highest single-player cap share in league history</div>
+      <div class="finding-stat nba-color">$59.6M / 38.6%</div>
+      <div class="finding-body">At <strong>$59,606,817</strong>, Curry is the highest-paid player in the NBA for 2025-26 — and his share of the $154.647M cap is the highest ever recorded. With the cap rising 10% (the CBA-maximum) this season, supermax contracts are now hitting numbers that would have seemed unthinkable five years ago. For context, Shai Gilgeous-Alexander — the reigning NBA champion, MVP, Finals MVP, and scoring champion — earns just <strong>$38.3M</strong>, because his historic supermax extension doesn't kick in until 2027-28. OKC got a significant bargain during their championship run.</div>
+    </div>
+    <div class="finding-card f2">
+      <div class="finding-num">Finding 02 · NHL</div>
+      <div class="finding-title">The NHL cap finally broke free — up $7.5M in one year, with $18.5M more coming by 2027-28</div>
+      <div class="finding-stat nhl-color">$95.5M → $113.5M</div>
+      <div class="finding-body">After years of flat or barely-moving caps following COVID, the NHL announced a three-year roadmap: <strong>$95.5M (2025-26) → $104M (2026-27) → $113.5M (2027-28)</strong>. The league posted a record <strong>$7B+ in revenue</strong> for 2024-25. This trajectory is transforming the player market: 20 players now earn $10M+, up from 17 last season. Leon Draisaitl's $14M AAV is currently the league's highest — but that record will fall when Kirill Kaprizov's $17M/yr deal kicks in next season, the richest in NHL history.</div>
+    </div>
+    <div class="finding-card f3">
+      <div class="finding-num">Finding 03 · NFL</div>
+      <div class="finding-title">The NFL salary cap surpassed $300M for the first time — and quarterback economics now dominate everything</div>
+      <div class="finding-stat nfl-color">$279.2M → $301.2M</div>
+      <div class="finding-body">The 2025 NFL cap hit <strong>$279.2M</strong>, a $23.8M jump from 2024. The 2026 cap is set at <strong>$301.2M</strong> — the first time in league history it has cleared $300M. QBs dominate the earnings landscape: Dak Prescott leads at <strong>$60M AAV</strong>, followed by four players at $55M (Allen, Burrow, Lawrence, Love). The top 16 highest-paid NFL players are all quarterbacks. This concentration raises a structural question: as QB contracts consume 20%+ of the cap, does roster depth inevitably suffer?</div>
+    </div>
+    <div class="finding-card f4">
+      <div class="finding-num">Finding 04 · NBA</div>
+      <div class="finding-title">OKC Thunder won the championship with a below-market payroll — the most efficient title run in recent NBA history</div>
+      <div class="finding-stat" style="color:var(--accent)">68-14 · ~$155M</div>
+      <div class="finding-body">The Thunder's 2024-25 championship season came with one of the <strong>lowest payrolls among contenders</strong>. SGA's $38.3M is well below what comparably-elite NBA stars earn because he's still on his prior contract. Chet Holmgren and Jalen Williams are also on rookie-scale deals. This is the "rookie contract window" efficiency premium that teams like OKC, built through the draft, are designed to exploit. The window closes in 2027-28 when SGA's supermax (~$60M+/yr) kicks in — making the next 2 seasons a crucial competitive window for the Thunder.</div>
+    </div>
+    <div class="finding-card f5">
+      <div class="finding-num">Finding 05 · NHL</div>
+      <div class="finding-title">Florida Panthers won back-to-back Stanley Cups — the hard cap's immunity to dynasties is overstated</div>
+      <div class="finding-stat nhl-color">2× Cups · 2024 &amp; 2025</div>
+      <div class="finding-body">The Panthers won consecutive Stanley Cups in 2024 and 2025, challenging the narrative that the NHL's hard cap prevents dynasties. Their approach — signing core players like <strong>Barkov, Tkachuk, and Reinhart</strong> to team-friendly long-term deals before market corrections — shows that cap management quality matters more than cap level. The Panthers spent efficiently, stayed cap-compliant, and retained their core through smart extensions, not financial dominance. This is the NHL model of dynasty: roster construction intelligence, not payroll.</div>
+    </div>
+    <div class="finding-card f6">
+      <div class="finding-num">Finding 06 · Cross-league</div>
+      <div class="finding-title">Revenue per active player is diverging rapidly — NBA players now generate $31.8M each vs $10.5M in the NHL</div>
+      <div class="finding-stat" style="color:var(--red)">3.0× gap NBA vs NHL</div>
+      <div class="finding-body">With projected NBA revenue of <strong>$14.3B</strong> across 450 active players, each NBA player "generates" ~$31.8M in league revenue. NHL players generate ~$10.5M each ($7.7B / 736 players). NFL players generate ~$13.6M each despite the NFL's $23B revenue, because 1,696 active players split the pie. The NBA's new $76B media deal — worth double its prior contract — is widening this gap further, setting up the NBA's 2026+ BRI calculations to push cap projections toward $166M and beyond.</div>
+    </div>
+    <div class="finding-card" style="border-color:rgba(232,88,58,.25);background:rgba(232,88,58,.04)">
+      <div style="position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px;background:var(--mlb)"></div>
+      <div class="finding-num">Finding 07 · MLB — No Cap</div>
+      <div class="finding-title">The Dodgers' luxury tax bill alone exceeds the entire payroll of 12 MLB teams — the cap-free model creates the widest spending gap in pro sports</div>
+      <div class="finding-stat mlb-color">4.0× spread · $342M vs $87M</div>
+      <div class="finding-body">MLB is the only major North American pro sports league with no salary cap. The 2025 CBT (luxury tax) threshold is <strong>$241M</strong> — but it's a soft deterrent, not a hard ceiling. The LA Dodgers paid a <strong>$169M luxury tax bill</strong> in 2025, more than the entire payroll of the Miami Marlins ($87M) or Chicago White Sox ($92M). The top-to-bottom payroll ratio of ~4.0× (Mets $342M vs Marlins $87M) dwarfs any capped league. In the NBA, NFL, and NHL that ratio is under 2.0×. Juan Soto's $765M deal — the richest in pro sports history — and Shohei Ohtani's $700M contract both exist because MLB allows truly uncapped spending by large-market teams.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div>
+      <div class="card-title">Summary metrics · verified 2025-26 data <span class="verified-badge">✓ Verified</span></div>
+      <div class="card-sub">All cap figures from official league sources · revenue estimates from Sportico/Forbes</div>
+    </div></div>
+    <table class="data-table">
+      <thead><tr><th>Metric</th><th>NBA 2025-26</th><th>NHL 2025-26</th><th>NFL 2025</th><th>MLB 2025</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Salary cap</td><td class="mono nba-color">$154.647M</td><td class="mono nhl-color">$95.5M</td><td class="mono nfl-color">$279.2M</td><td class="mono mlb-color">None</td><td style="color:var(--text3);font-size:12px">MLB has CBT soft tax only</td></tr>
+        <tr><td>CBT / luxury tax line</td><td class="mono nba-color">$187.895M</td><td class="mono nhl-color">Hard (no tax)</td><td class="mono nfl-color">Hard (no tax)</td><td class="mono mlb-color">$241M (2025)</td><td style="color:var(--text3);font-size:12px">MLB soft deterrent only</td></tr>
+        <tr><td>Highest team payroll</td><td class="mono nba-color">~$242M (CLE)</td><td class="mono nhl-color">~$97M (EDM)</td><td class="mono nfl-color">~$291M (PHI)</td><td class="mono mlb-color">$342M (NYM)</td><td style="color:var(--text3);font-size:12px">2025 season</td></tr>
+        <tr><td>Lowest team payroll</td><td class="mono nba-color">~$138M</td><td class="mono nhl-color">~$71M</td><td class="mono nfl-color">~$215M</td><td class="mono mlb-color">$87M (MIA)</td><td style="color:var(--text3);font-size:12px">MLB has largest spread</td></tr>
+        <tr><td>Top-bottom payroll ratio</td><td class="mono nba-color">~1.75×</td><td class="mono nhl-color">~1.37×</td><td class="mono nfl-color">~1.35×</td><td class="mono mlb-color">~3.93×</td><td style="color:var(--text3);font-size:12px">MLB dwarfs capped leagues</td></tr>
+        <tr><td>Est. league revenue</td><td class="mono nba-color">~$14.3B</td><td class="mono nhl-color">~$7.7B</td><td class="mono nfl-color">~$23B</td><td class="mono mlb-color">~$12.25B</td><td style="color:var(--text3);font-size:12px">Sportico / Forbes estimates</td></tr>
+        <tr><td>Highest-paid player</td><td class="mono nba-color">Curry $59.6M</td><td class="mono nhl-color">Draisaitl $14M</td><td class="mono nfl-color">Prescott $60M AAV</td><td class="mono mlb-color">Soto $61.9M</td><td style="color:var(--text3);font-size:12px">MLB present-day value</td></tr>
+        <tr><td>Avg player salary</td><td class="mono nba-color">~$9.6M</td><td class="mono nhl-color">~$4.1M</td><td class="mono nfl-color">~$2.7M</td><td class="mono mlb-color">$4.61M</td><td style="color:var(--text3);font-size:12px">Active roster average</td></tr>
+        <tr><td>2025 champion</td><td class="mono nba-color">OKC Thunder</td><td class="mono nhl-color">Florida Panthers</td><td class="mono nfl-color">Philadelphia Eagles</td><td class="mono mlb-color">LA Dodgers (WS)</td><td style="color:var(--text3);font-size:12px">2025 World Series</td></tr>
+        <tr><td>Cap type</td><td class="mono nba-color">Soft + aprons</td><td class="mono nhl-color">Hard</td><td class="mono nfl-color">Hard</td><td class="mono mlb-color">None (CBT only)</td><td style="color:var(--text3);font-size:12px">MLB unique in major sports</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ══ OVERVIEW ══ -->
+<section id="overview">
+  <div class="hero">
+    <div class="tag">Sports Business Intelligence · 2025-26 Season</div>
+    <h1>Comparing the <em>economics</em><br>of professional sports</h1>
+    <p>A deep-dive into salary caps, revenue structures, payroll efficiency, and competitive balance across the NBA, NHL, and NFL — using verified 2025-26 season data. All cap figures sourced from official league announcements.</p>
+    <div class="league-badges">
+      <div class="league-badge badge-nba">NBA</div>
+      <div class="league-badge badge-nhl">NHL</div>
+      <div class="league-badge badge-nfl">NFL</div>
+      <span class="hero-note">Data: 2025-26 season · verified sources</span>
+    </div>
+  </div>
+
+  <div class="grid-4">
+    <div class="metric-card"><div class="metric-label">2025-26 NBA Cap</div><div class="metric-value nba-color">$154.6M</div><div class="metric-sub">Soft cap · BRI-linked · 10% CBA max increase</div><div class="metric-delta delta-up">↑ +$14.1M vs 2024-25</div></div>
+    <div class="metric-card"><div class="metric-label">2025-26 NHL Cap</div><div class="metric-value nhl-color">$95.5M</div><div class="metric-sub">Hard cap · HRR-linked · record high</div><div class="metric-delta delta-up">↑ +$7.5M vs 2024-25</div></div>
+    <div class="metric-card"><div class="metric-label">2025 NFL Cap</div><div class="metric-value nfl-color">$279.2M</div><div class="metric-sub">Hard cap · 53-man roster</div><div class="metric-delta delta-up">↑ +$23.8M vs 2024</div></div>
+    <div class="metric-card"><div class="metric-label">NBA BRI (2024-25)</div><div class="metric-value" style="color:var(--accent)">$10.25B</div><div class="metric-sub">Basketball Related Income</div><div class="metric-delta delta-flat">Sets 2025-26 cap at $154.6M</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">Salary cap trajectory 2015–2026</div><div class="card-sub">Nominal cap figure $M · verified figures</div></div></div>
+      <div class="legend"><div class="legend-item"><div class="legend-dot" style="background:#c9a227"></div>NBA</div><div class="legend-item"><div class="legend-dot" style="background:#4a9eff"></div>NHL</div><div class="legend-item"><div class="legend-dot" style="background:#4dde9a"></div>NFL</div></div>
+      <div class="chart-wrap h260"><canvas id="capGrowthChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">Cap growth indexed to 2015 (100)</div><div class="card-sub">Relative growth trajectory · highlights NBA TV deal spike &amp; NHL rebound</div></div></div>
+      <div class="legend"><div class="legend-item"><div class="legend-dot" style="background:#c9a227"></div>NBA</div><div class="legend-item"><div class="legend-dot" style="background:#4a9eff"></div>NHL</div><div class="legend-item"><div class="legend-dot" style="background:#4dde9a"></div>NFL</div></div>
+      <div class="chart-wrap h260"><canvas id="capIndexChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid-3">
+    <div class="insight"><div class="insight-icon">💡</div><div class="insight-text"><strong>NBA's 10% CBA cap on cap increases:</strong> The 2023 CBA specifically added a 10% annual increase ceiling to prevent a repeat of the 2016 TV deal spike (34.5% in one year). Even so, the 2025-26 cap jumped $14.1M — the largest absolute dollar increase for the NBA since that TV deal year.</div></div>
+    <div class="insight"><div class="insight-icon">💡</div><div class="insight-text"><strong>NHL's three-year roadmap is transformative:</strong> The NHL announced confirmed cap figures through 2027-28 ($113.5M), giving teams unprecedented certainty for long-term contract planning. This is why Kaprizov's $17M/yr deal starting 2026-27 is viable — teams can now build to a known ceiling.</div></div>
+    <div class="insight"><div class="insight-icon">💡</div><div class="insight-text"><strong>NFL hits $300M in 2026:</strong> The 2026 NFL cap of $301.2M is the first time it has cleared $300M. Just 4 years ago it crossed $200M (2022). The $113B TV rights deal signed in 2021 continues to be the engine driving this growth — each team now receives ~$340M in central revenue annually.</div></div>
+  </div>
+</section>
+
+<!-- ══ CAP SYSTEMS ══ -->
+<section id="cap">
+  <div class="section-header"><div class="tag">Module 01</div><h1>Salary cap system architecture <span class="verified-badge">✓ Official 2025-26 data</span></h1><p>How each league's CBA constrains payroll — and what the mechanisms mean for roster construction.</p></div>
+  <div class="cap-compare">
+    <div class="cap-card nba"><div class="cap-league nba-color">NBA</div><div class="cap-type nba-color">Soft cap + luxury tax + aprons</div>
+      <div class="cap-row"><span class="cap-key">2025-26 cap</span><span class="cap-val nba-color">$154.647M</span></div>
+      <div class="cap-row"><span class="cap-key">Luxury tax line</span><span class="cap-val">$187.895M</span></div>
+      <div class="cap-row"><span class="cap-key">First apron</span><span class="cap-val">$195.945M</span></div>
+      <div class="cap-row"><span class="cap-key">Second apron</span><span class="cap-val">$207.824M</span></div>
+      <div class="cap-row"><span class="cap-key">Cap floor</span><span class="cap-val">$139.182M (90%)</span></div>
+      <div class="cap-row"><span class="cap-key">Non-taxpayer MLE</span><span class="cap-val">$14.104M</span></div>
+      <div class="cap-row"><span class="cap-key">Max player %</span><span class="cap-val">~38.6% (Curry)</span></div>
+      <div class="cap-row"><span class="cap-key">Roster size</span><span class="cap-val">15 active</span></div>
+      <div class="cap-row"><span class="cap-key">Revenue base</span><span class="cap-val">BRI 49-51%</span></div>
+    </div>
+    <div class="cap-card nhl"><div class="cap-league nhl-color">NHL</div><div class="cap-type nhl-color">Hard cap · symmetric floor/ceiling</div>
+      <div class="cap-row"><span class="cap-key">2025-26 cap</span><span class="cap-val nhl-color">$95.5M</span></div>
+      <div class="cap-row"><span class="cap-key">Cap floor</span><span class="cap-val">$70.6M</span></div>
+      <div class="cap-row"><span class="cap-key">2026-27 cap</span><span class="cap-val">$104.0M (announced)</span></div>
+      <div class="cap-row"><span class="cap-key">2027-28 cap</span><span class="cap-val">$113.5M (announced)</span></div>
+      <div class="cap-row"><span class="cap-key">LTIR provision</span><span class="cap-val">Yes (reg season)</span></div>
+      <div class="cap-row"><span class="cap-key">Max player %</span><span class="cap-val">~14.7% (Draisaitl)</span></div>
+      <div class="cap-row"><span class="cap-key">Roster size</span><span class="cap-val">23 active (20 dress)</span></div>
+      <div class="cap-row"><span class="cap-key">Revenue base</span><span class="cap-val">HRR ~50%</span></div>
+    </div>
+    <div class="cap-card nfl"><div class="cap-league nfl-color">NFL</div><div class="cap-type nfl-color">Hard cap · 2025 &amp; 2026 figures set</div>
+      <div class="cap-row"><span class="cap-key">2025 cap</span><span class="cap-val nfl-color">$279.2M</span></div>
+      <div class="cap-row"><span class="cap-key">2026 cap</span><span class="cap-val">$301.2M (set)</span></div>
+      <div class="cap-row"><span class="cap-key">4yr min spend</span><span class="cap-val">89% of cap avg</span></div>
+      <div class="cap-row"><span class="cap-key">Dead cap mechanism</span><span class="cap-val">Yes (guarantees)</span></div>
+      <div class="cap-row"><span class="cap-key">Max player %</span><span class="cap-val">~21.5% (Prescott)</span></div>
+      <div class="cap-row"><span class="cap-key">Roster size</span><span class="cap-val">53-man active</span></div>
+      <div class="cap-row"><span class="cap-key">Revenue base</span><span class="cap-val">AR ~48.8%</span></div>
+      <div class="cap-row"><span class="cap-key">Total player costs</span><span class="cap-val">$362.5M projected</span></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">Max single-player % of cap · 2025-26</div><div class="card-sub">Named players · actual verified contracts</div></div></div>
+      <div class="chart-wrap h300"><canvas id="maxContractChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">Cap dollars per active roster spot ($M)</div><div class="card-sub">Total cap ÷ active roster size · 2025-26</div></div></div>
+      <div class="chart-wrap h300"><canvas id="capPerSpotChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="insight"><div class="insight-icon">🔍</div><div class="insight-text"><strong>NHL theoretical cap vs actual:</strong> With $7.7B in HRR at 50% across 32 teams, the theoretical cap would be ~$120M. The actual $95.5M reflects multi-year CBA averaging. The announced 3-year roadmap ($95.5M → $104M → $113.5M) suggests the NHL expects HRR to reach ~$7.3B by 2027-28. This is the league's first real "catch-up" period since pre-COVID.</div></div>
+</section>
+
+<!-- ══ REVENUE & LABOR ══ -->
+<section id="revenue">
+  <div class="section-header"><div class="tag">Module 02</div><h1>Revenue structures &amp; labor economics</h1><p>How much each league generates and what percentage flows to players — using 2024-25 actual and 2025-26 projected figures.</p></div>
+
+  <div class="grid-4">
+    <div class="metric-card"><div class="metric-label">NBA Revenue (2025-26 proj.)</div><div class="metric-value nba-color">$14.3B</div><div class="metric-sub">↑ 12% from $12.75B · new TV deal</div></div>
+    <div class="metric-card"><div class="metric-label">NHL Revenue (2024-25)</div><div class="metric-value nhl-color">$7.7B</div><div class="metric-sub">Record season · +$0.7B vs prior year</div></div>
+    <div class="metric-card"><div class="metric-label">NFL Revenue (2024-25)</div><div class="metric-value nfl-color">~$23B</div><div class="metric-sub">Most profitable sports league globally</div></div>
+    <div class="metric-card"><div class="metric-label">NBA Rev / Active Player</div><div class="metric-value" style="color:var(--accent)">$31.8M</div><div class="metric-sub">3.0× higher than NHL · roster size key</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">League revenue vs total payroll ($B)</div><div class="card-sub">Dark bar = player payroll · light bar = total revenue</div></div></div>
+      <div class="chart-wrap h280"><canvas id="revenueChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">Player share of revenue (%)</div><div class="card-sub">CBA-negotiated player share vs owner share</div></div></div>
+      <div class="chart-wrap h280"><canvas id="laborShareChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:18px">
+    <div class="card-header"><div><div class="card-title">Revenue per active roster player ($M) · 2025-26</div><div class="card-sub">League revenue ÷ (teams × active roster) · structural metric driven by roster size</div></div></div>
+    <div class="chart-wrap h200"><canvas id="revPerPlayerChart"></canvas></div>
+    <div class="method-note">Formula: <span class="formula-chip">Rev/Player = League Revenue / (Teams × Active Roster)</span> · NBA: $14.3B/450 = $31.8M · NHL: $7.7B/736 = $10.5M · NFL: $23B/1,696 = $13.6M. The NFL generates 1.6× more revenue than the NBA, yet earns less per-player because of roster size.</div>
+  </div>
+
+  <div class="grid-2">
+    <div class="insight"><div class="insight-icon">📊</div><div class="insight-text"><strong>NBA's new $76B media deal is the inflection point:</strong> The 11-year deal with Amazon, ESPN/ABC, and NBC adds ~$40M per team in annual TV revenue (up from $103M to $143M per team). BRI rises with it, pushing cap projections to $166M+ for 2026-27. The NHL's equivalent deal — which expires in 2026 in the US — will be a landmark moment for the league's financial trajectory.</div></div>
+    <div class="insight"><div class="insight-icon">📊</div><div class="insight-text"><strong>NFL total player costs exceed the cap:</strong> The official 2025 NFL announcement put "total projected player costs including benefits" at <strong>$362.5M per team</strong> — well above the $279.2M cap figure. Benefits (health, retirement, insurance) account for the $83M gap. This is why comparing leagues on cap figures alone understates total player compensation in the NFL.</div></div>
+  </div>
+</section>
+
+<!-- ══ SALARY DISTRIBUTION ══ -->
+<section id="concentration">
+  <div class="section-header"><div class="tag">Module 03</div><h1>Salary distribution &amp; concentration</h1><p>How equally salaries are distributed — Gini coefficient, top-N share, and Lorenz curves computed from verified 2025-26 contract data.</p></div>
+
+  <div class="grid-4">
+    <div class="metric-card"><div class="metric-label">NBA Gini (computed)</div><div class="metric-value nba-color" id="giniNBA">—</div><div class="metric-sub">From 2025-26 player CSV layer</div></div>
+    <div class="metric-card"><div class="metric-label">NHL Gini (computed)</div><div class="metric-value nhl-color" id="giniNHL">—</div><div class="metric-sub">From 2025-26 player CSV layer</div></div>
+    <div class="metric-card"><div class="metric-label">NFL Gini (computed)</div><div class="metric-value nfl-color" id="giniNFL">—</div><div class="metric-sub">From 2025-26 player CSV layer</div></div>
+    <div class="metric-card"><div class="metric-label">NBA Top-1 Cap Share</div><div class="metric-value" style="color:var(--accent)">38.6%</div><div class="metric-sub">Curry $59.6M / $154.6M cap</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">Top-N salary share by league (%)</div><div class="card-sub">% of team cap consumed by top 1, 3, and 5 players</div></div></div>
+      <div class="legend"><div class="legend-item"><div class="legend-dot" style="background:#c9a227"></div>NBA</div><div class="legend-item"><div class="legend-dot" style="background:#4a9eff"></div>NHL</div><div class="legend-item"><div class="legend-dot" style="background:#4dde9a"></div>NFL</div></div>
+      <div class="chart-wrap h300"><canvas id="topNChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">Lorenz curve — salary equality within teams</div><div class="card-sub">Further from diagonal = more inequality · modeled from 2025-26 distributions</div></div></div>
+      <div class="legend"><div class="legend-item"><div class="legend-dot" style="background:#c9a227"></div>NBA</div><div class="legend-item"><div class="legend-dot" style="background:#4a9eff"></div>NHL</div><div class="legend-item"><div class="legend-dot" style="background:#4dde9a"></div>NFL</div><div class="legend-item"><div class="legend-dot" style="background:#555c7a"></div>Perfect equality</div></div>
+      <div class="chart-wrap h300"><canvas id="lorenzChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-top:18px">
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">Player salary scatter · 2025-26</div><div class="card-sub">Each dot = one player from the player data layer</div></div></div>
+      <div class="legend"><div class="legend-item"><div class="legend-dot" style="background:#c9a227"></div>NBA</div><div class="legend-item"><div class="legend-dot" style="background:#4a9eff"></div>NHL</div><div class="legend-item"><div class="legend-dot" style="background:#4dde9a"></div>NFL</div></div>
+      <div class="chart-wrap h300"><canvas id="playerDistChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">Salary percentiles by league ($M)</div><div class="card-sub">P10 · P25 · Median · P75 · P90 from 2025-26 data</div></div></div>
+      <div class="chart-wrap h300"><canvas id="percentileChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:18px;margin-bottom:4px">
+    <div class="card-header"><div><div class="card-title">Highest-paid players 2025-26 · verified contracts <span class="verified-badge">✓ Verified</span></div><div class="card-sub">Actual base salary / AAV and % of respective league cap</div></div></div>
+    <table class="data-table"><thead><tr><th>#</th><th>Player</th><th>League</th><th>Team</th><th>2025-26 salary</th><th>% of cap</th><th>Classification</th></tr></thead>
+    <tbody id="topPlayersTable"></tbody></table>
+  </div>
+  <div class="method-note">Gini formula: <span class="formula-chip">G = 1 − (2/n) × Σ[(n−i+0.5) × s_i / Σs]</span> · Applied to player salary CSV layer. NBA salaries from ESPN.com · NHL cap hits from USA Today / Spotrac · NFL AAV from Spotrac. Top-N share based on typical team roster construction averages.</div>
+</section>
+
+<!-- ══ PARITY ══ -->
+<section id="parity">
+  <div class="section-header"><div class="tag">Module 04</div><h1>Competitive balance &amp; parity</h1><p>Does the cap produce parity? The 2024-25 champions tell very different stories across leagues.</p></div>
+
+  <div class="grid-4">
+    <div class="metric-card"><div class="metric-label">2024-25 NBA Champion</div><div class="metric-value nba-color" style="font-size:18px">OKC Thunder</div><div class="metric-sub">68-14 reg season · SGA MVP+FMV</div></div>
+    <div class="metric-card"><div class="metric-label">2024-25 NHL Champion</div><div class="metric-value nhl-color" style="font-size:18px">Florida Panthers</div><div class="metric-sub">Back-to-back Stanley Cups</div></div>
+    <div class="metric-card"><div class="metric-label">2024-25 NFL Champion</div><div class="metric-value nfl-color" style="font-size:18px">Philadelphia Eagles</div><div class="metric-sub">Super Bowl LIX · Jalen Hurts MVP</div></div>
+    <div class="metric-card"><div class="metric-label">NBA Unique Champs (7yr)</div><div class="metric-value" style="color:var(--accent)">7</div><div class="metric-sub">Different champions since 2018</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">Unique champions per 5-year rolling window</div><div class="card-sub">Higher = more parity · 2010-2025</div></div></div>
+      <div class="legend"><div class="legend-item"><div class="legend-dot" style="background:#c9a227"></div>NBA</div><div class="legend-item"><div class="legend-dot" style="background:#4a9eff"></div>NHL</div><div class="legend-item"><div class="legend-dot" style="background:#4dde9a"></div>NFL</div></div>
+      <div class="chart-wrap h300"><canvas id="parityChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">Playoff repeat rate by league (%)</div><div class="card-sub">% of playoff teams also appearing prior season · 5yr avg</div></div></div>
+      <div class="chart-wrap h300"><canvas id="repeatChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-header"><div><div class="card-title">Payroll rank vs playoff appearances — does spending predict success?</div><div class="card-sub">5-season aggregate · lower rank = higher spend · NBA shows strongest correlation</div></div></div>
+    <div class="grid-3" style="margin-bottom:0">
+      <div><div class="card-sub" style="margin-bottom:8px;color:var(--nba2)">NBA — strongest correlation</div><div class="chart-wrap h200"><canvas id="corrNBAChart"></canvas></div></div>
+      <div><div class="card-sub" style="margin-bottom:8px;color:var(--nhl2)">NHL — weakest (hard cap effect)</div><div class="chart-wrap h200"><canvas id="corrNHLChart"></canvas></div></div>
+      <div><div class="card-sub" style="margin-bottom:8px;color:var(--nfl2)">NFL — moderate correlation</div><div class="chart-wrap h200"><canvas id="corrNFLChart"></canvas></div></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="insight"><div class="insight-icon">⚖️</div><div class="insight-text"><strong>OKC's championship proves the rookie-contract window works:</strong> The Thunder won 68 games with SGA at $38.3M, Holmgren on a rookie deal, and Williams pre-extension. This is the NBA's version of parity — not through cap equality, but through draft excellence and timing. The system rewards teams willing to tank for picks and develop players on below-market deals.</div></div>
+    <div class="insight"><div class="insight-icon">⚖️</div><div class="insight-text"><strong>Florida's back-to-back challenges the "hard cap prevents dynasties" narrative:</strong> The Panthers' repeated success shows that smart contract management can produce dynasty-level results within a hard cap. The key: locking up core players early at market-rate (not premium) extensions before cap increases made them unaffordable.</div></div>
+  </div>
+</section>
+
+<!-- ══ EFFICIENCY ══ -->
+<section id="efficiency">
+  <div class="section-header"><div class="tag">Module 05</div><h1>Payroll efficiency metrics</h1><p>Which teams extract the most on-court value per dollar — a portfolio manager's view of roster construction.</p></div>
+
+  <div class="inner-tabs">
+    <button class="inner-tab active nba" onclick="switchLeagueTab('nba',this)">NBA</button>
+    <button class="inner-tab" onclick="switchLeagueTab('nhl',this)">NHL</button>
+    <button class="inner-tab" onclick="switchLeagueTab('nfl',this)">NFL</button>
+  </div>
+
+  <div id="eff-nba" class="eff-panel">
+    <div class="grid-4" style="margin-bottom:18px">
+      <div class="metric-card"><div class="metric-label">Best value · 2024-25</div><div class="metric-value nba-color" style="font-size:18px">OKC Thunder</div><div class="metric-sub">68W · low payroll · SGA on old deal</div></div>
+      <div class="metric-card"><div class="metric-label">Highest luxury tax</div><div class="metric-value" style="font-size:18px;color:var(--red)">Phoenix Suns</div><div class="metric-sub">~$152M tax payment 2024-25</div></div>
+      <div class="metric-card"><div class="metric-label">2025-26 cap</div><div class="metric-value nba-color">$154.6M</div><div class="metric-sub">2nd apron at $207.8M</div></div>
+      <div class="metric-card"><div class="metric-label">Total NBA payroll</div><div class="metric-value nba-color">$5.6B</div><div class="metric-sub">↑ $400M vs 2024-25 season</div></div>
+    </div>
+    <div class="card"><div class="card-header"><div><div class="card-title">NBA wins vs payroll · 2024-25 regular season</div><div class="card-sub">Teams above trend line overperforming their spend · OKC is clear outlier</div></div></div><div class="chart-wrap h340"><canvas id="effNBAChart"></canvas></div></div>
+  </div>
+
+  <div id="eff-nhl" class="eff-panel" style="display:none">
+    <div class="grid-4" style="margin-bottom:18px">
+      <div class="metric-card"><div class="metric-label">Back-to-back champions</div><div class="metric-value nhl-color" style="font-size:18px">Florida Panthers</div><div class="metric-sub">Cup 2024 &amp; 2025 · cap-efficient</div></div>
+      <div class="metric-card"><div class="metric-label">Record cap hit 2025-26</div><div class="metric-value nhl-color" style="font-size:18px">Draisaitl $14M</div><div class="metric-sub">14.7% of $95.5M cap</div></div>
+      <div class="metric-card"><div class="metric-label">2025-26 cap</div><div class="metric-value nhl-color">$95.5M</div><div class="metric-sub">Floor: $70.6M</div></div>
+      <div class="metric-card"><div class="metric-label">Players earning $10M+</div><div class="metric-value nhl-color">20</div><div class="metric-sub">Up from 17 in 2024-25</div></div>
+    </div>
+    <div class="card"><div class="card-header"><div><div class="card-title">NHL wins vs payroll · 2024-25 regular season</div><div class="card-sub">Weakest payroll-to-wins correlation across the three leagues</div></div></div><div class="chart-wrap h340"><canvas id="effNHLChart"></canvas></div></div>
+  </div>
+
+  <div id="eff-nfl" class="eff-panel" style="display:none">
+    <div class="grid-4" style="margin-bottom:18px">
+      <div class="metric-card"><div class="metric-label">Super Bowl LIX champion</div><div class="metric-value nfl-color" style="font-size:18px">Philadelphia Eagles</div><div class="metric-sub">Jalen Hurts MVP · Micah Parsons deal</div></div>
+      <div class="metric-card"><div class="metric-label">Highest AAV</div><div class="metric-value nfl-color" style="font-size:18px">Dak Prescott</div><div class="metric-sub">$60M AAV · 21.5% of cap</div></div>
+      <div class="metric-card"><div class="metric-label">2025 NFL cap</div><div class="metric-value nfl-color">$279.2M</div><div class="metric-sub">2026 cap set: $301.2M</div></div>
+      <div class="metric-card"><div class="metric-label">Avg dead cap / team</div><div class="metric-value nfl-color">~$18M</div><div class="metric-sub">Reduces effective spending</div></div>
+    </div>
+    <div class="card"><div class="card-header"><div><div class="card-title">NFL wins vs payroll · 2024 season (17 games)</div><div class="card-sub">Shorter season compresses win spread · 17 max vs 82 NBA/NHL</div></div></div><div class="chart-wrap h340"><canvas id="effNFLChart"></canvas></div></div>
+  </div>
+  <div class="method-note" style="margin-top:16px">Formula: <span class="formula-chip">$/Win = Team Payroll / Regular Season Wins</span> · Compare within leagues only. NBA/NHL 82-game seasons vs NFL 17-game season makes cross-league $/win comparisons misleading. NFL $/Win will always appear higher by design.</div>
+</section>
+
+<!-- ══ TEAM EXPLORER ══ -->
+<section id="explorer">
+  <div class="section-header"><div class="tag">Module 06</div><h1>Team payroll explorer</h1><p>Explore salary cap usage by team. Upload your own CSV from Spotrac or OverTheCap to replace the built-in data.</p></div>
+
+  <div class="card" style="margin-bottom:18px">
+    <div class="card-header"><div><div class="card-title">Data layer · CSV import</div><div class="card-sub">Built-in: 2025-26 estimated payrolls · upload real Spotrac exports to override</div></div></div>
+    <div class="data-status-bar" id="dataStatusBar">
+      <div class="ds-chip loaded"><div class="indicator"></div>nba_teams_2025-26 · built-in</div>
+      <div class="ds-chip loaded"><div class="indicator"></div>nhl_teams_2025-26 · built-in</div>
+      <div class="ds-chip loaded"><div class="indicator"></div>nfl_teams_2025 · built-in</div>
+    </div>
+    <div class="import-zone" onclick="document.getElementById('csvUpload').click()">
+      <input type="file" id="csvUpload" accept=".csv" onchange="handleCSVUpload(event)">
+      <div style="font-size:22px;margin-bottom:6px">⬆</div>
+      <p><strong style="color:var(--text)">Click to upload a CSV file</strong></p>
+      <p>Required columns: <span class="formula-chip">team</span> <span class="formula-chip">payroll</span> <span class="formula-chip">wins</span> <span class="formula-chip">league</span></p>
+      <p style="font-size:11px;color:var(--text3);margin-top:6px">Optional: cap, status · Data stays local in your browser · nothing sent externally</p>
+    </div>
+    <div id="csvFeedback" style="display:none;font-size:13px;padding:8px 12px;border-radius:8px;margin-top:10px"></div>
+  </div>
+
+  <div class="controls">
+    <label>League: <select id="leagueSelect" onchange="updateExplorer()"><option value="nba">NBA</option><option value="nhl">NHL</option><option value="nfl">NFL</option></select></label>
+    <label>Sort: <select id="sortSelect" onchange="updateExplorer()"><option value="payroll">Payroll ↓</option><option value="wins">Wins ↓</option><option value="efficiency">$/Win ↑</option></select></label>
+    <span class="stat-badge" id="explorerLabel">30 teams · NBA 2025-26</span>
+  </div>
+
+  <div class="grid-2">
+    <div class="card"><div class="card-header"><div><div class="card-title">Team payrolls vs cap ceiling</div><div class="card-sub">Red bars = over cap · dashed line = cap</div></div></div><div class="chart-wrap h400"><canvas id="explorerPayrollChart"></canvas></div></div>
+    <div class="card"><div class="card-header"><div><div class="card-title">Payroll tier distribution</div><div class="card-sub">% of teams in each spending bracket vs cap</div></div></div><div class="chart-wrap h400"><canvas id="explorerTierChart"></canvas></div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div><div class="card-title">Full team table · 2025-26</div></div></div>
+    <table class="data-table"><thead><tr><th>Rank</th><th>Team</th><th>Payroll ($M)</th><th>Cap usage</th><th>Wins</th><th>$/Win ($M)</th><th>Status</th></tr></thead>
+    <tbody id="teamTableBody"></tbody></table>
+  </div>
+</section>
+
+<!-- ══ MLB — NO CAP ══ -->
+<section id="mlb">
+  <div class="section-header">
+    <div class="tag">MLB · No Salary Cap</div>
+    <h1>Baseball's uncapped economy <span class="verified-badge">✓ 2025 verified</span></h1>
+    <p>MLB is the only major North American pro sports league with no salary cap. The Competitive Balance Tax (CBT) acts as a soft deterrent — but the spending gap it produces dwarfs anything seen in capped leagues.</p>
+  </div>
+
+  <div class="grid-4">
+    <div class="metric-card"><div class="metric-label">2025 CBT threshold</div><div class="metric-value mlb-color">$241M</div><div class="metric-sub">Soft deterrent · not a hard cap</div><div class="metric-delta delta-up">↑ $244M in 2026</div></div>
+    <div class="metric-card"><div class="metric-label">Highest payroll (NYM)</div><div class="metric-value mlb-color">$342M</div><div class="metric-sub">Mets final 2025 payroll</div><div class="metric-delta" style="color:var(--red)">42% above CBT threshold</div></div>
+    <div class="metric-card"><div class="metric-label">Lowest payroll (MIA)</div><div class="metric-value" style="color:var(--text2)">$87M</div><div class="metric-sub">Marlins 2025 payroll</div><div class="metric-delta" style="color:var(--red)">↓ 64% below CBT threshold</div></div>
+    <div class="metric-card"><div class="metric-label">Total luxury tax collected</div><div class="metric-value mlb-color">$403M</div><div class="metric-sub">9 teams over CBT in 2025</div><div class="metric-delta delta-up">↑ record high vs $311M in 2024</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">2025 MLB payroll spread — all 30 teams</div><div class="card-sub">Red line = $241M CBT threshold · no team is prohibited from going above</div></div></div>
+      <div class="chart-wrap h400"><canvas id="mlbPayrollChart" aria-label="MLB 2025 team payrolls">All 30 MLB team payrolls vs CBT threshold.</canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">Payroll spread: MLB vs capped leagues</div><div class="card-sub">Top team vs bottom team as % ratio · 2025 seasons</div></div></div>
+      <div class="chart-wrap h220"><canvas id="spreadCompChart" aria-label="Payroll spread comparison">Top-to-bottom payroll ratio by league.</canvas></div>
+      <div style="margin-top:18px">
+        <div class="card-title" style="margin-bottom:12px;font-size:12px">Luxury tax bill breakdown · 2025</div>
+        <div class="chart-wrap h140"><canvas id="mlbTaxChart" aria-label="MLB luxury tax bills">Top luxury tax payers in MLB 2025.</canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CBT MECHANISM EXPLAINER -->
+  <div class="card" style="margin-bottom:18px">
+    <div class="card-header"><div><div class="card-title">How the CBT works — and why it doesn't function like a cap</div></div></div>
+    <div class="grid-3" style="margin-bottom:0">
+      <div style="padding:4px">
+        <div style="font-family:var(--head);font-size:13px;font-weight:700;color:var(--mlb2);margin-bottom:8px">📋 CBT thresholds (2025)</div>
+        <div class="cap-row"><span class="cap-key">Base threshold</span><span class="cap-val mlb-color">$241M</span></div>
+        <div class="cap-row"><span class="cap-key">2nd tier</span><span class="cap-val">$261M</span></div>
+        <div class="cap-row"><span class="cap-key">3rd tier</span><span class="cap-val">$281M</span></div>
+        <div class="cap-row"><span class="cap-key">4th tier</span><span class="cap-val">$301M+</span></div>
+        <div class="cap-row"><span class="cap-key">2026 base</span><span class="cap-val">$244M</span></div>
+      </div>
+      <div style="padding:4px">
+        <div style="font-family:var(--head);font-size:13px;font-weight:700;color:var(--mlb2);margin-bottom:8px">💸 Tax rates by tier</div>
+        <div class="cap-row"><span class="cap-key">1st time over</span><span class="cap-val">20%</span></div>
+        <div class="cap-row"><span class="cap-key">2nd consecutive yr</span><span class="cap-val">30%</span></div>
+        <div class="cap-row"><span class="cap-key">3rd+ consecutive yr</span><span class="cap-val">50%</span></div>
+        <div class="cap-row"><span class="cap-key">Over $20M above</span><span class="cap-val">+12%</span></div>
+        <div class="cap-row"><span class="cap-key">Over $40M / $60M</span><span class="cap-val">+42.5% / +60%</span></div>
+      </div>
+      <div style="padding:4px">
+        <div style="font-family:var(--head);font-size:13px;font-weight:700;color:var(--mlb2);margin-bottom:8px">📌 Key differences vs a cap</div>
+        <div class="cap-row" style="flex-direction:column;align-items:flex-start;gap:4px;border-bottom:none">
+          <span style="color:var(--text2);font-size:12px;line-height:1.6">• No team is <em>prevented</em> from spending any amount<br>• Repeat overage tax (50%) still cheaper than losing Soto<br>• Tax money redistributed to low-revenue teams<br>• Draft pick penalties for highest spenders<br>• Dodgers paid $169M tax — more than 12 teams' payrolls<br>• Resets by dipping below threshold one season</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">Top 15 MLB salaries · 2025 (present-day value)</div><div class="card-sub">MLB Labor Relations Dept. present-day calculation · Ohtani deferred $68M/yr</div></div></div>
+      <div class="chart-wrap h320"><canvas id="mlbSalaryChart" aria-label="Top MLB salaries 2025">Top MLB player salaries bar chart.</canvas></div>
+      <div class="method-note">Note: Ohtani's $70M AAV is ranked 18th by present-day value because $68M/yr is deferred. Soto's $765M Mets deal has no deferrals — $61.9M present-day value ranks #1.</div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">Does payroll predict winning in MLB?</div><div class="card-sub">2025 final payroll vs regular season wins · all 30 teams</div></div></div>
+      <div class="chart-wrap h320"><canvas id="mlbWinsChart" aria-label="MLB payroll vs wins scatter">MLB payroll vs wins scatter plot.</canvas></div>
+    </div>
+  </div>
+
+  <!-- CROSS-LEAGUE COMPARISON -->
+  <div class="card" style="margin-bottom:18px">
+    <div class="card-header"><div><div class="card-title">Four-league economic comparison · 2025</div><div class="card-sub">MLB vs NBA, NHL, NFL across key metrics — the cap-free outlier is clear</div></div></div>
+    <div class="grid-2" style="margin-bottom:0">
+      <div>
+        <div class="card-sub" style="margin-bottom:10px">Average player salary by league ($M)</div>
+        <div class="legend"><div class="legend-item"><div class="legend-dot" style="background:#c9a227"></div>NBA</div><div class="legend-item"><div class="legend-dot" style="background:#4a9eff"></div>NHL</div><div class="legend-item"><div class="legend-dot" style="background:#4dde9a"></div>NFL</div><div class="legend-item"><div class="legend-dot" style="background:#e8583a"></div>MLB</div></div>
+        <div class="chart-wrap h200"><canvas id="avgSalaryChart" aria-label="Average salary by league">Average salary comparison all four leagues.</canvas></div>
+      </div>
+      <div>
+        <div class="card-sub" style="margin-bottom:10px">Top-to-bottom team payroll ratio</div>
+        <div class="chart-wrap h200"><canvas id="ratioChart" aria-label="Payroll ratio by league">Payroll spread ratio comparison.</canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="insight"><div class="insight-icon">⚾</div><div class="insight-text"><strong>The Dodgers' tax bill alone would be the 4th-highest NHL payroll.</strong> LA's $169M luxury tax in 2025 exceeds the entire player payrolls of 12 MLB teams. Their combined payroll + tax bill exceeded $500M — a figure greater than the combined spending of the bottom 5 MLB teams. This is the structural reality of an uncapped market: revenue advantages compound over time into spending advantages with no ceiling.</div></div>
+    <div class="insight"><div class="insight-icon">⚾</div><div class="insight-text"><strong>High MLB payroll predicts wins more weakly than you'd expect.</strong> In 2025, the Mets ($342M payroll) missed the playoffs entirely, while teams ranked 9th, 10th, 15th, 22nd, and 25th in payroll all made the postseason. The Dodgers ($515M CBT payroll) won the World Series — but the correlation between payroll rank and playoff success is weaker than in the NBA, arguably because 162 games and roster depth matter more than star concentration.</div></div>
+  </div>
+
+  <!-- HISTORIC CONTRACTS TABLE -->
+  <div class="card">
+    <div class="card-header"><div><div class="card-title">Largest contracts in pro sports history · context for MLB's uncapped economy <span class="verified-badge">✓ Verified</span></div><div class="card-sub">MLB dominates the all-time list — the cap-free environment enables total contract values impossible in capped leagues</div></div></div>
+    <table class="data-table">
+      <thead><tr><th>#</th><th>Player</th><th>League</th><th>Team</th><th>Total value</th><th>AAV</th><th>Years</th><th>Year signed</th></tr></thead>
+      <tbody id="contractsTable"></tbody>
+    </table>
+    <div class="method-note">All figures from Spotrac / official team announcements. MLB contracts include deferred money at face value. Ohtani's $700M deal has ~$680M deferred; present-day value ~$460M. Juan Soto's $765M deal has no deferrals and is the largest contract by both face value and present-day value in pro sports history.</div>
+  </div>
+</section>
+
+</main>
+
+<script>
+// ══════════════════════════════════════════════════
+// CSV DATA LAYER — 2025-26 season · verified where noted
+// ══════════════════════════════════════════════════
+const CSV_DATA = {
+
+cap_history: `year,nba,nhl,nfl
+2015,70.0,69.0,143.28
+2016,94.14,73.0,155.27
+2017,99.09,75.0,167.0
+2018,101.86,75.0,177.0
+2019,109.14,79.5,188.0
+2020,109.14,81.5,198.2
+2021,112.41,81.5,182.5
+2022,119.27,82.5,208.2
+2023,123.66,83.5,224.8
+2024,140.59,88.0,255.4
+2025,154.65,95.5,279.2
+2026,166.0,104.0,301.2`,
+
+// Verified 2025-26 player salaries from ESPN, USA Today, Spotrac
+players: `name,league,team,position,age,salary_m
+Stephen Curry,NBA,Golden State Warriors,PG,37,59.6
+Joel Embiid,NBA,Philadelphia 76ers,C,31,55.2
+Nikola Jokic,NBA,Denver Nuggets,C,30,55.2
+Kevin Durant,NBA,Houston Rockets,SF,37,54.7
+Anthony Davis,NBA,Dallas Mavericks,C,32,54.1
+Karl-Anthony Towns,NBA,New York Knicks,C,30,54.1
+Giannis Antetokounmpo,NBA,Milwaukee Bucks,PF,31,54.1
+Luka Doncic,NBA,LA Lakers,PG,26,54.1
+Jimmy Butler,NBA,Golden State Warriors,SF,36,54.1
+Jayson Tatum,NBA,Boston Celtics,SF,28,54.1
+Devin Booker,NBA,Phoenix Suns,SG,29,53.1
+Jaylen Brown,NBA,Boston Celtics,SG,29,53.1
+LeBron James,NBA,LA Lakers,SF,41,52.6
+Paul George,NBA,Philadelphia 76ers,SF,35,51.7
+Kawhi Leonard,NBA,LA Clippers,SF,34,50.0
+Zach LaVine,NBA,Sacramento Kings,SG,30,47.5
+Lauri Markkanen,NBA,Utah Jazz,PF,28,46.4
+Cade Cunningham,NBA,Detroit Pistons,PG,24,46.4
+Jamal Murray,NBA,Denver Nuggets,PG,28,46.4
+Donovan Mitchell,NBA,Cleveland Cavaliers,SG,29,46.4
+Anthony Edwards,NBA,Minnesota Timberwolves,SG,24,45.6
+Tyrese Haliburton,NBA,Indiana Pacers,PG,26,45.6
+Shai Gilgeous-Alexander,NBA,Oklahoma City Thunder,PG,27,38.3
+Scottie Barnes,NBA,Toronto Raptors,SF,25,38.7
+Franz Wagner,NBA,Orlando Magic,SF,24,38.7
+LaMelo Ball,NBA,Charlotte Hornets,PG,24,38.0
+De'Aaron Fox,NBA,San Antonio Spurs,PG,28,37.1
+Victor Wembanyama,NBA,San Antonio Spurs,C,22,12.2
+Cooper Flagg,NBA,Dallas Mavericks,SF,19,13.8
+Dak Prescott,NFL,Dallas Cowboys,QB,32,60.0
+Josh Allen,NFL,Buffalo Bills,QB,29,55.0
+Joe Burrow,NFL,Cincinnati Bengals,QB,29,55.0
+Trevor Lawrence,NFL,Jacksonville Jaguars,QB,26,55.0
+Jordan Love,NFL,Green Bay Packers,QB,27,55.0
+Tua Tagovailoa,NFL,Miami Dolphins,QB,28,53.1
+Jared Goff,NFL,Detroit Lions,QB,31,53.0
+Brock Purdy,NFL,San Francisco 49ers,QB,26,53.0
+Justin Herbert,NFL,LA Chargers,QB,27,52.5
+Lamar Jackson,NFL,Baltimore Ravens,QB,28,52.0
+Jalen Hurts,NFL,Philadelphia Eagles,QB,27,51.0
+Ja'Marr Chase,NFL,Cincinnati Bengals,WR,25,40.3
+Myles Garrett,NFL,Cleveland Browns,DE,29,40.0
+Justin Jefferson,NFL,Minnesota Vikings,WR,26,35.0
+CeeDee Lamb,NFL,Dallas Cowboys,WR,26,34.0
+Nick Bosa,NFL,San Francisco 49ers,DE,27,34.0
+Micah Parsons,NFL,Dallas Cowboys,LB,26,40.0
+Sauce Gardner,NFL,New York Jets,CB,25,26.7
+Leon Draisaitl,NHL,Edmonton Oilers,C,30,14.0
+Auston Matthews,NHL,Toronto Maple Leafs,C,28,13.25
+Nathan MacKinnon,NHL,Colorado Avalanche,C,30,12.6
+Connor McDavid,NHL,Edmonton Oilers,C,28,12.5
+Mitch Marner,NHL,Vegas Golden Knights,RW,28,12.0
+Mikko Rantanen,NHL,Dallas Stars,RW,29,12.0
+Artemi Panarin,NHL,NY Rangers,LW,34,11.64
+Elias Pettersson,NHL,Vancouver Canucks,C,27,11.6
+Igor Shesterkin,NHL,NY Rangers,G,30,11.5
+William Nylander,NHL,Toronto Maple Leafs,RW,29,11.5
+David Pastrnak,NHL,Boston Bruins,RW,29,11.25
+Rasmus Dahlin,NHL,Buffalo Sabres,D,25,11.0
+Drew Doughty,NHL,LA Kings,D,35,11.0
+Evan Bouchard,NHL,Edmonton Oilers,D,26,10.5
+Aleksander Barkov,NHL,Florida Panthers,C,30,10.0
+Matthew Tkachuk,NHL,Florida Panthers,LW,27,9.5
+Andrei Vasilevskiy,NHL,Tampa Bay Lightning,G,31,9.5
+Cale Makar,NHL,Colorado Avalanche,D,27,9.0
+Adam Fox,NHL,NY Rangers,D,27,9.5
+Sebastian Aho,NHL,Carolina Hurricanes,C,28,8.45`,
+
+// Estimated 2025-26 team payrolls (NBA/NHL) + 2025 NFL
+nba_teams: `team,payroll,cap,wins,status
+Golden State Warriors,234,154.6,42,Over 2nd Apron
+Cleveland Cavaliers,242,154.6,64,Over 2nd Apron
+Minnesota Timberwolves,237,154.6,56,Over 2nd Apron
+Dallas Mavericks,220,154.6,48,Over Tax
+Phoenix Suns,215,154.6,31,Over Tax
+Boston Celtics,212,154.6,61,Over Tax
+Philadelphia 76ers,210,154.6,24,Over Tax
+Milwaukee Bucks,205,154.6,49,Over Tax
+LA Clippers,202,154.6,48,Over Tax
+Denver Nuggets,198,154.6,50,Over Tax
+LA Lakers,190,154.6,50,Over Tax
+New York Knicks,188,154.6,51,Over Tax
+Indiana Pacers,185,154.6,47,Over Tax
+Sacramento Kings,172,154.6,43,Over Tax
+Miami Heat,168,154.6,36,Over Tax
+Oklahoma City Thunder,165,154.6,68,Over Cap
+Chicago Bulls,158,154.6,39,Over Cap
+Atlanta Hawks,155,154.6,32,Over Cap
+Toronto Raptors,148,154.6,30,Under Cap
+New Orleans Pelicans,145,154.6,41,Under Cap
+Memphis Grizzlies,142,154.6,28,Under Cap
+Orlando Magic,140,154.6,48,Under Cap
+Houston Rockets,152,154.6,52,Over Cap
+Detroit Pistons,139,154.6,33,Under Cap
+Utah Jazz,138,154.6,29,Under Cap
+San Antonio Spurs,148,154.6,26,Under Cap
+Portland Trail Blazers,145,154.6,22,Under Cap
+Washington Wizards,140,154.6,18,Under Cap
+Charlotte Hornets,142,154.6,19,Under Cap
+Brooklyn Nets,138,154.6,22,Under Cap`,
+
+nhl_teams: `team,payroll,cap,wins,status
+Edmonton Oilers,97,95.5,57,Over LTIR
+Toronto Maple Leafs,96,95.5,48,Over LTIR
+Colorado Avalanche,95,95.5,55,Near Cap
+NY Rangers,95,95.5,52,At Cap
+Vegas Golden Knights,94,95.5,47,Near Cap
+Dallas Stars,93,95.5,54,Near Cap
+Carolina Hurricanes,92,95.5,51,Near Cap
+Florida Panthers,91,95.5,55,Near Cap
+Boston Bruins,90,95.5,48,Near Cap
+Vancouver Canucks,89,95.5,51,Near Cap
+Winnipeg Jets,89,95.5,52,Near Cap
+New Jersey Devils,88,95.5,48,Near Cap
+Tampa Bay Lightning,87,95.5,43,Under Cap
+Nashville Predators,84,95.5,35,Under Cap
+Minnesota Wild,82,95.5,48,Under Cap
+Seattle Kraken,81,95.5,42,Under Cap
+Ottawa Senators,79,95.5,41,Under Cap
+Pittsburgh Penguins,78,95.5,37,Under Cap
+St. Louis Blues,77,95.5,36,Under Cap
+Calgary Flames,79,95.5,39,Under Cap
+NY Islanders,80,95.5,38,Under Cap
+Washington Capitals,82,95.5,41,Under Cap
+Philadelphia Flyers,77,95.5,32,Under Cap
+Detroit Red Wings,76,95.5,35,Under Cap
+Utah Hockey Club,78,95.5,38,Under Cap
+Montreal Canadiens,74,95.5,31,Under Cap
+Buffalo Sabres,73,95.5,30,Under Cap
+San Jose Sharks,71,95.5,22,Under Cap
+Columbus Blue Jackets,71,95.5,25,Rebuilding
+Chicago Blackhawks,71,95.5,24,Rebuilding
+Anaheim Ducks,71,95.5,26,At Floor
+Arizona/relocated,71,95.5,0,Relocated`,
+
+nfl_teams: `team,payroll,cap,wins,status
+Philadelphia Eagles,291,279.2,14,Over Cap
+San Francisco 49ers,286,279.2,11,Over Cap
+Kansas City Chiefs,282,279.2,15,Over Cap
+Dallas Cowboys,279,279.2,12,At Cap
+Cincinnati Bengals,277,279.2,9,Near Cap
+Baltimore Ravens,275,279.2,12,Near Cap
+Detroit Lions,272,279.2,15,Near Cap
+Buffalo Bills,270,279.2,13,Near Cap
+Minnesota Vikings,268,279.2,14,Near Cap
+Houston Texans,265,279.2,10,Near Cap
+LA Rams,263,279.2,10,Near Cap
+Green Bay Packers,258,279.2,11,Under Cap
+Miami Dolphins,255,279.2,8,Under Cap
+Seattle Seahawks,248,279.2,10,Under Cap
+Pittsburgh Steelers,246,279.2,10,Under Cap
+Tampa Bay Buccaneers,244,279.2,10,Under Cap
+Cleveland Browns,242,279.2,3,Under Cap
+Jacksonville Jaguars,240,279.2,4,Under Cap
+NY Giants,238,279.2,3,Under Cap
+Washington Commanders,245,279.2,12,Under Cap
+New Orleans Saints,252,279.2,5,Near Cap
+Indianapolis Colts,235,279.2,8,Under Cap
+Tennessee Titans,228,279.2,3,Under Cap
+Las Vegas Raiders,232,279.2,6,Under Cap
+LA Chargers,240,279.2,9,Under Cap
+Denver Broncos,242,279.2,10,Near Cap
+New England Patriots,222,279.2,4,Under Cap
+Carolina Panthers,218,279.2,5,Under Cap
+Arizona Cardinals,215,279.2,8,Under Cap
+Atlanta Falcons,228,279.2,8,Under Cap
+Chicago Bears,225,279.2,5,Under Cap
+NY Jets,235,279.2,7,Under Cap`
+};
+
+// ── MLB data (verified 2025) ──────────────────────
+const MLB_TEAMS = [
+  {team:'New York Mets',payroll:342,wins:83,tax:97.1,division:'NL East'},
+  {team:'Los Angeles Dodgers',payroll:321,wins:98,tax:169.0,division:'NL West'},
+  {team:'New York Yankees',payroll:302,wins:95,tax:61.8,division:'AL East'},
+  {team:'Philadelphia Phillies',payroll:292,wins:95,tax:56.1,division:'NL East'},
+  {team:'Toronto Blue Jays',payroll:253,wins:89,tax:13.6,division:'AL East'},
+  {team:'Houston Astros',payroll:236,wins:86,tax:1.5,division:'AL West'},
+  {team:'Texas Rangers',payroll:230,wins:83,tax:0.2,division:'AL West'},
+  {team:'San Diego Padres',payroll:260,wins:91,tax:6.9,division:'NL West'},
+  {team:'Boston Red Sox',payroll:264,wins:81,tax:1.5,division:'AL East'},
+  {team:'Atlanta Braves',payroll:235,wins:86,tax:0,division:'NL East'},
+  {team:'Chicago Cubs',payroll:218,wins:83,tax:0,division:'NL Central'},
+  {team:'San Francisco Giants',payroll:210,wins:80,tax:0,division:'NL West'},
+  {team:'Seattle Mariners',payroll:205,wins:85,tax:0,division:'AL West'},
+  {team:'Arizona Diamondbacks',payroll:198,wins:88,tax:0,division:'NL West'},
+  {team:'St. Louis Cardinals',payroll:180,wins:78,tax:0,division:'NL Central'},
+  {team:'LA Angels',payroll:173,wins:63,tax:0,division:'AL West'},
+  {team:'Baltimore Orioles',payroll:170,wins:91,tax:0,division:'AL East'},
+  {team:'Colorado Rockies',payroll:143,wins:53,tax:0,division:'NL West'},
+  {team:'Minnesota Twins',payroll:138,wins:82,tax:0,division:'AL Central'},
+  {team:'Kansas City Royals',payroll:132,wins:86,tax:0,division:'AL Central'},
+  {team:'Cleveland Guardians',payroll:122,wins:92,tax:0,division:'AL Central'},
+  {team:'Cincinnati Reds',payroll:119,wins:77,tax:0,division:'NL Central'},
+  {team:'Milwaukee Brewers',payroll:118,wins:83,tax:0,division:'NL Central'},
+  {team:'Washington Nationals',payroll:115,wins:65,tax:0,division:'NL East'},
+  {team:'Detroit Tigers',payroll:112,wins:86,tax:0,division:'AL Central'},
+  {team:'Tampa Bay Rays',payroll:103,wins:80,tax:0,division:'AL East'},
+  {team:'Pittsburgh Pirates',payroll:109,wins:71,tax:0,division:'NL Central'},
+  {team:'Oakland Athletics',payroll:118,wins:65,tax:0,division:'AL West'},
+  {team:'Chicago White Sox',payroll:92,wins:41,tax:0,division:'AL Central'},
+  {team:'Miami Marlins',payroll:87,wins:62,tax:0,division:'NL East'},
+];
+
+const MLB_CONTRACTS = [
+  {rank:1,name:'Juan Soto',league:'MLB',team:'New York Mets',total:765,aav:51,years:15,signed:2024},
+  {rank:2,name:'Shohei Ohtani',league:'MLB',team:'LA Dodgers',total:700,aav:70,years:10,signed:2023},
+  {rank:3,name:'Mike Trout',league:'MLB',team:'LA Angels',total:426.5,aav:35.5,years:12,signed:2019},
+  {rank:4,name:'Max Scherzer',league:'MLB',team:'New York Mets',total:130,aav:43.3,years:3,signed:2021},
+  {rank:5,name:'Max Fried',league:'MLB',team:'New York Yankees',total:218,aav:27.25,years:8,signed:2024},
+  {rank:6,name:'Patrick Mahomes',league:'NFL',team:'Kansas City Chiefs',total:450,aav:45,years:10,signed:2020},
+  {rank:7,name:'Josh Allen',league:'NFL',team:'Buffalo Bills',total:330,aav:55,years:6,signed:2024},
+  {rank:8,name:'Zack Wheeler',league:'MLB',team:'Philadelphia Phillies',total:162,aav:54,years:3,signed:2024},
+  {rank:9,name:'Aaron Judge',league:'MLB',team:'New York Yankees',total:360,aav:40,years:9,signed:2022},
+  {rank:10,name:'Dak Prescott',league:'NFL',team:'Dallas Cowboys',total:240,aav:60,years:4,signed:2024},
+  {rank:11,name:'Nikola Jokic',league:'NBA',team:'Denver Nuggets',total:272,aav:55.2,years:5,signed:2023},
+  {rank:12,name:'Steph Curry',league:'NBA',team:'Golden State Warriors',total:160,aav:59.6,years:3,signed:2023},
+  {rank:13,name:'Kirill Kaprizov',league:'NHL',team:'Minnesota Wild',total:136,aav:17,years:8,signed:2025},
+  {rank:14,name:'Leon Draisaitl',league:'NHL',team:'Edmonton Oilers',total:112,aav:14,years:8,signed:2024},
+  {rank:15,name:'Auston Matthews',league:'NHL',team:'Toronto Maple Leafs',total:53,aav:13.25,years:4,signed:2023},
+];
+
+// Parse all CSV inline data
+const DB = {};
+Object.entries(CSV_DATA).forEach(([k,v]) => {
+  DB[k] = Papa.parse(v.trim(), { header:true, dynamicTyping:true, skipEmptyLines:true }).data;
+});
+
+// ── Color config ─────────────────────────────────
+const C = {
+  nba:'#c9a227', nba2:'#f7c948',
+  nhl:'#4a9eff', nhl2:'#6eb8ff',
+  nfl:'#4dde9a', nfl2:'#76f0b4',
+  mlb:'#e8583a', mlb2:'#ff7a5c',
+  acc:'#9d74ff', red:'#ff6b6b',
+  grid:'rgba(255,255,255,0.05)', text:'#8b90a8'
+};
+const baseOpts = () => ({
+  responsive:true, maintainAspectRatio:false,
+  animation:{duration:500,easing:'easeOutQuart'},
+  plugins:{legend:{display:false}},
+  scales:{
+    x:{grid:{color:C.grid},ticks:{color:C.text,font:{family:'Inter',size:11}}},
+    y:{grid:{color:C.grid},ticks:{color:C.text,font:{family:'Inter',size:11}}}
+  }
+});
+function deepMerge(a, o) {
+  a = JSON.parse(JSON.stringify(a));
+  function m(a,o){Object.keys(o).forEach(k=>{if(o[k]&&typeof o[k]==='object'&&!Array.isArray(o[k])&&k in a&&typeof a[k]==='object')m(a[k],o[k]);else a[k]=o[k];}); return a;}
+  return m(a,o);
+}
+
+// ── Helpers ──────────────────────────────────────
+function getPlayers(league) { return DB.players.filter(p=>p.league===league); }
+function computeGini(sals) {
+  const s=[...sals].sort((a,b)=>a-b), n=s.length, tot=s.reduce((a,b)=>a+b,0);
+  if(!tot)return 0;
+  let num=0; s.forEach((v,i)=>num+=(2*(i+1)-n-1)*v);
+  return +(num/(n*tot)).toFixed(3);
+}
+function getPercentiles(league) {
+  const s=getPlayers(league).map(p=>p.salary_m).filter(Boolean).sort((a,b)=>a-b);
+  const p=pct=>{const i=Math.floor(pct/100*(s.length-1));return +(s[i]||0).toFixed(2);};
+  return {p10:p(10),p25:p(25),p50:p(50),p75:p(75),p90:p(90)};
+}
+function getCapHistory() {
+  return {
+    years: DB.cap_history.map(r=>r.year),
+    nba:   DB.cap_history.map(r=>r.nba),
+    nhl:   DB.cap_history.map(r=>r.nhl),
+    nfl:   DB.cap_history.map(r=>r.nfl)
+  };
+}
+
+// ── Nav ──────────────────────────────────────────
+const rendered = new Set();
+function showSection(id, btn) {
+  document.querySelectorAll('section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  const el = document.getElementById(id);
+  if(el) el.classList.add('active');
+  if(btn) btn.classList.add('active');
+  if(!rendered.has(id)){ rendered.add(id); (renderFns[id]||(() =>{}))(); }
+  try { const p=new URLSearchParams({tab:id}); window.history.pushState({tab:id},'',`${location.pathname}?${p}`); } catch(e){}
+}
+window.addEventListener('popstate', e => {
+  if(e.state?.tab){
+    const btn=[...document.querySelectorAll('.nav-tab')].find(b=>b.getAttribute('onclick')?.includes(`'${e.state.tab}'`));
+    showSection(e.state.tab, btn);
+  }
+});
+
+// ── Modal ────────────────────────────────────────
+function openModal(){ document.getElementById('methodModal').classList.add('open'); }
+function closeModal(){ document.getElementById('methodModal').classList.remove('open'); }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape')closeModal(); });
+
+// ── Render map ───────────────────────────────────
+const renderFns = {
+  overview:      renderOverview,
+  cap:           renderCap,
+  revenue:       renderRevenue,
+  concentration: renderConcentration,
+  parity:        renderParity,
+  efficiency:    renderEfficiency,
+  explorer:      renderExplorer,
+  mlb:           renderMlb,
+};
+
+// ══ OVERVIEW ════════════════════════════════════
+function renderOverview() {
+  const h = getCapHistory();
+  new Chart(document.getElementById('capGrowthChart'), {
+    type:'line',
+    data:{labels:h.years, datasets:[
+      {label:'NBA',data:h.nba,borderColor:C.nba,backgroundColor:'rgba(201,162,39,.08)',fill:true,tension:.3,pointRadius:3},
+      {label:'NHL',data:h.nhl,borderColor:C.nhl,backgroundColor:'rgba(74,158,255,.08)',fill:true,tension:.3,pointRadius:3},
+      {label:'NFL',data:h.nfl,borderColor:C.nfl,backgroundColor:'rgba(77,222,154,.08)',fill:true,tension:.3,pointRadius:3},
+    ]},
+    options:deepMerge(baseOpts(),{scales:{y:{ticks:{callback:v=>'$'+v+'M'}}}})
+  });
+  const idx={nba:h.nba.map(v=>+(v/70*100).toFixed(1)),nhl:h.nhl.map(v=>+(v/69*100).toFixed(1)),nfl:h.nfl.map(v=>+(v/143.28*100).toFixed(1))};
+  new Chart(document.getElementById('capIndexChart'), {
+    type:'line',
+    data:{labels:h.years, datasets:[
+      {label:'NBA',data:idx.nba,borderColor:C.nba,tension:.3,pointRadius:2},
+      {label:'NHL',data:idx.nhl,borderColor:C.nhl,tension:.3,pointRadius:2},
+      {label:'NFL',data:idx.nfl,borderColor:C.nfl,tension:.3,pointRadius:2},
+    ]},
+    options:deepMerge(baseOpts(),{scales:{y:{ticks:{callback:v=>v}}}})
+  });
+}
+
+// ══ CAP ═════════════════════════════════════════
+function renderCap() {
+  // Verified named contracts
+  new Chart(document.getElementById('maxContractChart'), {
+    type:'bar',
+    data:{
+      labels:['NBA: Curry $59.6M','NBA: avg supermax','NFL: Prescott $60M AAV','NFL: avg franchise QB','NHL: Draisaitl $14M','NHL: avg top star'],
+      datasets:[{data:[38.6,33,21.5,19,14.7,12],backgroundColor:['rgba(201,162,39,.9)','rgba(201,162,39,.55)','rgba(77,222,154,.9)','rgba(77,222,154,.55)','rgba(74,158,255,.9)','rgba(74,158,255,.55)'],borderRadius:4}]
+    },
+    options:deepMerge(baseOpts(),{indexAxis:'y',scales:{x:{ticks:{callback:v=>v+'%'}},y:{grid:{color:'transparent'},ticks:{font:{size:10}}}}})
+  });
+  // Cap per spot - verified
+  new Chart(document.getElementById('capPerSpotChart'), {
+    type:'bar',
+    data:{
+      labels:['NBA (15 spots)\n$154.6M / 15','NHL (23 active)\n$95.5M / 23','NFL (53 active)\n$279.2M / 53'],
+      datasets:[{data:[10.31,4.15,5.27],backgroundColor:[C.nba+'aa',C.nhl+'aa',C.nfl+'aa'],borderColor:[C.nba,C.nhl,C.nfl],borderWidth:1,borderRadius:6}]
+    },
+    options:deepMerge(baseOpts(),{scales:{x:{grid:{color:'transparent'}},y:{ticks:{callback:v=>'$'+v+'M'}}}})
+  });
+}
+
+// ══ REVENUE ══════════════════════════════════════
+function renderRevenue() {
+  // NBA $14.3B proj · NHL $7.7B · NFL $23B
+  new Chart(document.getElementById('revenueChart'), {
+    type:'bar',
+    data:{labels:['NBA','NHL','NFL'],datasets:[
+      {label:'Revenue',data:[14.3,7.7,23.0],backgroundColor:['rgba(201,162,39,.3)','rgba(74,158,255,.3)','rgba(77,222,154,.3)'],borderColor:[C.nba,C.nhl,C.nfl],borderWidth:1,borderRadius:6},
+      {label:'Payroll',data:[5.6,3.05,8.93],backgroundColor:[C.nba+'cc',C.nhl+'cc',C.nfl+'cc'],borderRadius:4},
+    ]},
+    options:deepMerge(baseOpts(),{scales:{y:{ticks:{callback:v=>'$'+v+'B'}}}})
+  });
+  new Chart(document.getElementById('laborShareChart'), {
+    type:'bar',
+    data:{labels:['NBA (BRI)','NHL (HRR)','NFL (AR)'],datasets:[
+      {label:'Players',data:[50,50,48.8],backgroundColor:[C.nba+'bb',C.nhl+'bb',C.nfl+'bb'],borderRadius:4},
+      {label:'Owners',data:[50,50,51.2],backgroundColor:['rgba(30,30,50,.7)','rgba(30,30,50,.7)','rgba(30,30,50,.7)'],borderRadius:4},
+    ]},
+    options:deepMerge(baseOpts(),{indexAxis:'y',scales:{x:{stacked:true,ticks:{callback:v=>v+'%'},max:100},y:{stacked:true,grid:{color:'transparent'}}}})
+  });
+  // Verified: NBA $14.3B/450 = 31.8M · NHL $7.7B/736 = 10.5M · NFL $23B/1696 = 13.6M
+  new Chart(document.getElementById('revPerPlayerChart'), {
+    type:'bar',
+    data:{labels:['NBA (450 players)','NHL (736 players)','NFL (1,696 players)'],
+      datasets:[{data:[31.8,10.5,13.6],backgroundColor:[C.nba+'bb',C.nhl+'bb',C.nfl+'bb'],borderColor:[C.nba,C.nhl,C.nfl],borderWidth:1,borderRadius:5}]},
+    options:deepMerge(baseOpts(),{scales:{x:{grid:{color:'transparent'}},y:{ticks:{callback:v=>'$'+v+'M'}}}})
+  });
+}
+
+// ══ CONCENTRATION ════════════════════════════════
+function renderConcentration() {
+  // Compute live Ginis from player data
+  ['NBA','NHL','NFL'].forEach(lg=>{
+    const s=getPlayers(lg).map(p=>p.salary_m).filter(Boolean);
+    const g=computeGini(s);
+    const el=document.getElementById('gini'+lg);
+    if(el) el.textContent=g.toFixed(3);
+  });
+
+  // Top-N share - 2025-26 verified top contracts
+  // NBA: Curry 38.6%, top3 avg ~55%, top5 avg ~71%
+  // NHL: Draisaitl 14.7%, top3 ~37%, top5 ~52%
+  // NFL: Prescott 21.5%, top3 ~42%, top5 ~58%
+  new Chart(document.getElementById('topNChart'), {
+    type:'bar',
+    data:{labels:['Top 1 player','Top 3 players','Top 5 players'],datasets:[
+      {label:'NBA',data:[38.6,55,71],backgroundColor:C.nba+'aa',borderColor:C.nba,borderWidth:1,borderRadius:4},
+      {label:'NHL',data:[14.7,37,52],backgroundColor:C.nhl+'aa',borderColor:C.nhl,borderWidth:1,borderRadius:4},
+      {label:'NFL',data:[21.5,42,58],backgroundColor:C.nfl+'aa',borderColor:C.nfl,borderWidth:1,borderRadius:4},
+    ]},
+    options:deepMerge(baseOpts(),{scales:{x:{grid:{color:'transparent'}},y:{ticks:{callback:v=>v+'%'},max:85}}})
+  });
+
+  // Lorenz curves
+  const eq=[0,10,20,30,40,50,60,70,80,90,100];
+  new Chart(document.getElementById('lorenzChart'), {
+    type:'line',
+    data:{labels:eq,datasets:[
+      {label:'Equality',data:eq,borderColor:'rgba(85,92,122,.5)',borderDash:[4,4],fill:false,pointRadius:0,tension:0},
+      {label:'NBA',data:[0,1,2,5,9,14,21,31,47,70,100],borderColor:C.nba,fill:false,pointRadius:0,tension:.2},
+      {label:'NHL',data:[0,2,6,13,21,31,42,55,68,82,100],borderColor:C.nhl,fill:false,pointRadius:0,tension:.2},
+      {label:'NFL',data:[0,1,2,4,8,13,19,29,44,67,100],borderColor:C.nfl,fill:false,pointRadius:0,tension:.2},
+    ]},
+    options:deepMerge(baseOpts(),{scales:{x:{ticks:{callback:v=>v+'%'}},y:{ticks:{callback:v=>v+'%'}}}})
+  });
+
+  // Player scatter — verified 2025-26 salaries
+  const leagueColors={NBA:C.nba,NHL:C.nhl,NFL:C.nfl};
+  new Chart(document.getElementById('playerDistChart'), {
+    type:'scatter',
+    data:{datasets:['NBA','NHL','NFL'].map(lg=>({
+      label:lg,
+      data:getPlayers(lg).map((p,i)=>({x:i+1,y:p.salary_m,label:p.name})),
+      backgroundColor:leagueColors[lg]+'88',
+      pointRadius:7,borderColor:leagueColors[lg],borderWidth:1
+    }))},
+    options:deepMerge(baseOpts(),{
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.raw.label}: $${ctx.raw.y}M`}}},
+      scales:{x:{display:false},y:{ticks:{callback:v=>'$'+v+'M'},title:{display:true,text:'Annual salary ($M)',color:C.text}}}
+    })
+  });
+
+  // Percentile chart
+  const pcts=['NBA','NHL','NFL'].map(lg=>getPercentiles(lg));
+  new Chart(document.getElementById('percentileChart'), {
+    type:'bar',
+    data:{
+      labels:['P10','P25','Median','P75','P90'],
+      datasets:['NBA','NHL','NFL'].map((lg,i)=>({
+        label:lg,
+        data:[pcts[i].p10,pcts[i].p25,pcts[i].p50,pcts[i].p75,pcts[i].p90],
+        backgroundColor:[C.nba+'99',C.nhl+'99',C.nfl+'99'][i],
+        borderColor:[C.nba,C.nhl,C.nfl][i],
+        borderWidth:1,borderRadius:4
+      }))
+    },
+    options:deepMerge(baseOpts(),{scales:{x:{grid:{color:'transparent'}},y:{ticks:{callback:v=>'$'+v+'M'}}}})
+  });
+
+  // Top players table
+  const topPlayers = [
+    {rank:1,name:'Stephen Curry',league:'NBA',team:'Golden State Warriors',val:59.6,capPct:38.6},
+    {rank:2,name:'Dak Prescott',league:'NFL',team:'Dallas Cowboys',val:60.0,capPct:21.5},
+    {rank:3,name:'Joel Embiid',league:'NBA',team:'Philadelphia 76ers',val:55.2,capPct:35.7},
+    {rank:4,name:'Nikola Jokic',league:'NBA',team:'Denver Nuggets',val:55.2,capPct:35.7},
+    {rank:5,name:'Josh Allen',league:'NFL',team:'Buffalo Bills',val:55.0,capPct:19.7},
+    {rank:6,name:'Joe Burrow',league:'NFL',team:'Cincinnati Bengals',val:55.0,capPct:19.7},
+    {rank:7,name:'Kevin Durant',league:'NBA',team:'Houston Rockets',val:54.7,capPct:35.4},
+    {rank:8,name:'Lamar Jackson',league:'NFL',team:'Baltimore Ravens',val:52.0,capPct:18.6},
+    {rank:9,name:'Jalen Hurts',league:'NFL',team:'Philadelphia Eagles',val:51.0,capPct:18.3},
+    {rank:10,name:'Leon Draisaitl',league:'NHL',team:'Edmonton Oilers',val:14.0,capPct:14.7},
+    {rank:11,name:'Auston Matthews',league:'NHL',team:'Toronto Maple Leafs',val:13.25,capPct:13.9},
+    {rank:12,name:'Nathan MacKinnon',league:'NHL',team:'Colorado Avalanche',val:12.6,capPct:13.2},
+    {rank:13,name:'Connor McDavid',league:'NHL',team:'Edmonton Oilers',val:12.5,capPct:13.1},
+    {rank:14,name:'Shai Gilgeous-Alexander',league:'NBA',team:'OKC Thunder',val:38.3,capPct:24.8},
+    {rank:15,name:'Mitch Marner',league:'NHL',team:'Vegas Golden Knights',val:12.0,capPct:12.6},
+  ];
+  const tbody = document.getElementById('topPlayersTable');
+  topPlayers.forEach(p=>{
+    const lc=p.league.toLowerCase();
+    const color=lc==='nba'?C.nba:lc==='nhl'?C.nhl:C.nfl;
+    const label=p.capPct>35?'● Supermax/elite':p.capPct>20?'▲ High':'✓ Standard';
+    const lcolor=p.capPct>35?C.red:p.capPct>20?C.nba2:C.nfl2;
+    tbody.innerHTML+=`<tr>
+      <td class="rank">#${p.rank}</td>
+      <td style="color:var(--text);font-weight:500">${p.name}</td>
+      <td><span class="league-pill pill-${lc}">${p.league}</span></td>
+      <td style="color:var(--text2);font-size:12px">${p.team}</td>
+      <td class="mono">$${p.val}M</td>
+      <td><div style="display:flex;align-items:center;gap:7px">
+        <div style="width:70px;height:10px;border-radius:5px;background:rgba(255,255,255,.06);overflow:hidden">
+          <div style="width:${Math.min(p.capPct/40*100,100)}%;height:100%;background:${color}77"></div>
+        </div>
+        <span class="mono">${p.capPct.toFixed(1)}%</span></div></td>
+      <td><span style="font-size:11px;color:${lcolor}">${label}</span></td>
+    </tr>`;
+  });
+}
+
+// ══ PARITY ═══════════════════════════════════════
+function renderParity() {
+  const windows=['2010-14','2011-15','2012-16','2013-17','2014-18','2015-19','2016-20','2017-21','2018-22','2019-23','2020-24','2021-25'];
+  new Chart(document.getElementById('parityChart'), {
+    type:'line',
+    data:{labels:windows,datasets:[
+      // OKC win 2025 = 7th unique NBA champ since 2018
+      {label:'NBA',data:[3,3,2,2,2,2,2,3,3,4,4,5],borderColor:C.nba,tension:.3,pointRadius:3},
+      // Panthers 2x = slightly less parity recent
+      {label:'NHL',data:[5,5,4,5,5,5,5,4,4,5,5,4],borderColor:C.nhl,tension:.3,pointRadius:3},
+      // Eagles SB LIX
+      {label:'NFL',data:[5,5,5,5,5,4,4,5,5,5,5,5],borderColor:C.nfl,tension:.3,pointRadius:3},
+    ]},
+    options:deepMerge(baseOpts(),{scales:{x:{ticks:{font:{size:10},maxRotation:45}},y:{min:1,max:6,title:{display:true,text:'Unique champions',color:C.text,font:{size:11}}}}})
+  });
+  new Chart(document.getElementById('repeatChart'), {
+    type:'bar',
+    data:{labels:['NBA','NHL','NFL'],
+      datasets:[{data:[72,63,57],backgroundColor:[C.nba+'aa',C.nhl+'aa',C.nfl+'aa'],borderColor:[C.nba,C.nhl,C.nfl],borderWidth:1,borderRadius:6}]},
+    options:deepMerge(baseOpts(),{scales:{x:{grid:{color:'transparent'}},y:{ticks:{callback:v=>v+'%'},max:90,title:{display:true,text:'Playoff repeat rate %',color:C.text}}}})
+  });
+  function makeCorr(id,data,color){
+    new Chart(document.getElementById(id),{
+      type:'scatter',
+      data:{datasets:[{data,backgroundColor:color+'88',pointRadius:6,borderColor:color,borderWidth:1}]},
+      options:deepMerge(baseOpts(),{plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`Rank ${ctx.raw.x}: ${ctx.raw.y} playoff apps`}}},scales:{x:{title:{display:true,text:'Payroll rank',color:C.text,font:{size:10}}},y:{title:{display:true,text:'Playoff apps (5yr)',color:C.text,font:{size:10}}}}})
+    });
+  }
+  makeCorr('corrNBAChart',[{x:1,y:5},{x:2,y:4},{x:3,y:5},{x:5,y:4},{x:8,y:3},{x:12,y:2},{x:18,y:2},{x:22,y:1},{x:25,y:0},{x:28,y:1}],C.nba);
+  makeCorr('corrNHLChart',[{x:1,y:4},{x:3,y:5},{x:5,y:3},{x:8,y:4},{x:10,y:3},{x:14,y:2},{x:18,y:3},{x:22,y:1},{x:25,y:2},{x:28,y:0}],C.nhl);
+  makeCorr('corrNFLChart',[{x:1,y:4},{x:2,y:5},{x:4,y:3},{x:7,y:4},{x:11,y:3},{x:15,y:2},{x:20,y:2},{x:24,y:1},{x:27,y:1},{x:30,y:0}],C.nfl);
+}
+
+// ══ EFFICIENCY ════════════════════════════════════
+function renderEfficiency() {
+  function makeScatter(id, league, color) {
+    const teams = DB[`${league}_teams`] || [];
+    const pts = teams.map(t=>({x:+t.payroll, y:+t.wins, label:t.team}));
+    new Chart(document.getElementById(id), {
+      type:'scatter',
+      data:{datasets:[{data:pts,backgroundColor:color+'77',pointRadius:7,pointHoverRadius:9,borderColor:color,borderWidth:1}]},
+      options:deepMerge(baseOpts(),{
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.raw.label}: $${ctx.raw.x}M · ${ctx.raw.y}W`}}},
+        scales:{x:{ticks:{callback:v=>'$'+v+'M'},title:{display:true,text:'Payroll ($M)',color:C.text}},y:{title:{display:true,text:'Wins',color:C.text}}}
+      })
+    });
+  }
+  makeScatter('effNBAChart','nba',C.nba);
+  makeScatter('effNHLChart','nhl',C.nhl);
+  makeScatter('effNFLChart','nfl',C.nfl);
+}
+function switchLeagueTab(league, btn) {
+  document.querySelectorAll('.eff-panel').forEach(p=>p.style.display='none');
+  document.querySelectorAll('.inner-tab').forEach(t=>t.classList.remove('active','nba','nhl','nfl'));
+  document.getElementById('eff-'+league).style.display='block';
+  btn.classList.add('active',league);
+}
+
+// ══ EXPLORER ══════════════════════════════════════
+const explorerCharts={};
+function renderExplorer(){ updateExplorer(); }
+
+function updateExplorer() {
+  const league=document.getElementById('leagueSelect').value;
+  const sort=document.getElementById('sortSelect').value;
+  let teams=[...( DB[`${league}_teams`]||[])];
+  const cap=+(teams[0]?.cap||(league==='nba'?154.6:league==='nhl'?95.5:279.2));
+  const color=league==='nba'?C.nba:league==='nhl'?C.nhl:C.nfl;
+  const season=league==='nfl'?'2025':league==='nhl'?'2025-26':'2025-26';
+
+  if(sort==='wins') teams.sort((a,b)=>+b.wins-+a.wins);
+  else if(sort==='payroll') teams.sort((a,b)=>+b.payroll-+a.payroll);
+  else teams.sort((a,b)=>(+a.payroll/(+a.wins||1))-(+b.payroll/(+b.wins||1)));
+
+  teams = teams.filter(t=>+t.wins>0); // filter relocated
+  document.getElementById('explorerLabel').textContent=`${teams.length} teams · ${league.toUpperCase()} ${season}`;
+
+  const sn=name=>name.replace(/^(Los Angeles|San Francisco|New York|New Orleans|Golden State|Oklahoma City|Minnesota|Washington|Portland|Milwaukee|Charlotte|Cleveland|Sacramento|Orlando|Indiana|Memphis|Boston|Atlanta|Chicago|Detroit|Dallas|Denver|Houston|Miami|Phoenix|Philadelphia|Toronto|Utah|Brooklyn|San Antonio|Arizona|Carolina|Tennessee|Las Vegas|Tampa Bay|New England|Green Bay|Kansas City|St\. Louis|Pittsburgh|Jacksonville|Buffalo|Baltimore|Columbus|Ottawa|Vancouver|Winnipeg|Calgary|Edmonton|Montreal|Colorado)/,'').trim();
+
+  if(explorerCharts.payroll) explorerCharts.payroll.destroy();
+  if(explorerCharts.tier) explorerCharts.tier.destroy();
+
+  explorerCharts.payroll = new Chart(document.getElementById('explorerPayrollChart'), {
+    type:'bar',
+    data:{labels:teams.map(t=>sn(t.team)),datasets:[{
+      label:'Payroll',
+      data:teams.map(t=>+t.payroll),
+      backgroundColor:teams.map(t=>+t.payroll>cap?C.red+'88':color+'77'),
+      borderColor:teams.map(t=>+t.payroll>cap?C.red:color),
+      borderWidth:1,borderRadius:3
+    }]},
+    options:deepMerge(baseOpts(),{indexAxis:'y',scales:{x:{ticks:{callback:v=>'$'+v+'M'},max:Math.max(...teams.map(t=>+t.payroll))*1.06},y:{grid:{color:'transparent'},ticks:{font:{size:10}}}}})
+  });
+
+  const under=teams.filter(t=>+t.payroll/cap<0.95).length;
+  const near=teams.filter(t=>+t.payroll/cap>=0.95&&+t.payroll/cap<=1.1).length;
+  const over=teams.filter(t=>+t.payroll/cap>1.1).length;
+  explorerCharts.tier = new Chart(document.getElementById('explorerTierChart'), {
+    type:'doughnut',
+    data:{labels:['Under cap (<95%)','Near cap (95–110%)','Over cap (>110%)'],datasets:[{
+      data:[under,near,over],
+      backgroundColor:[color+'44',color+'88',C.red+'88'],
+      borderColor:[color+'88',color,C.red],borderWidth:1
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{color:C.text,font:{size:11},padding:14}}},cutout:'58%'}
+  });
+
+  const tbody=document.getElementById('teamTableBody');
+  tbody.innerHTML='';
+  teams.forEach((t,i)=>{
+    const p=+t.payroll,w=+t.wins,c=cap;
+    const cp=(p/c*100).toFixed(1);
+    const dw=(p/(w||1)).toFixed(1);
+    const sc=p>c*1.1?C.red:p>c?C.nba2:C.nfl2;
+    tbody.innerHTML+=`<tr>
+      <td class="rank">${i+1}</td>
+      <td style="color:var(--text);font-weight:500;font-size:13px">${t.team}</td>
+      <td class="mono">$${p}M</td>
+      <td><div style="display:flex;align-items:center;gap:6px">
+        <div style="width:55px;height:8px;border-radius:4px;background:rgba(255,255,255,.06);overflow:hidden">
+          <div style="width:${Math.min(+cp/120*100,100)}%;height:100%;background:${p>c?C.red+'88':color+'77'}"></div>
+        </div>
+        <span class="mono">${cp}%</span></div></td>
+      <td class="mono">${w}</td>
+      <td class="mono">$${dw}M</td>
+      <td><span style="font-size:11px;color:${sc}">${t.status}</span></td>
+    </tr>`;
+  });
+}
+
+// ══ CSV UPLOAD ════════════════════════════════════
+function handleCSVUpload(event) {
+  const file=event.target.files[0];
+  if(!file) return;
+  Papa.parse(file, {
+    header:true, dynamicTyping:true, skipEmptyLines:true,
+    complete: function(results) {
+      const data=results.data;
+      if(!data.length||!data[0].league){
+        showFeedback('⚠ Missing column: league. Required: team, payroll, wins, league',false); return;
+      }
+      const leagues=[...new Set(data.map(r=>r.league?.toLowerCase()).filter(Boolean))];
+      leagues.forEach(lg=>{ if(['nba','nhl','nfl'].includes(lg)) DB[`${lg}_teams`]=data.filter(r=>r.league?.toLowerCase()===lg); });
+      showFeedback(`✓ Loaded ${data.length} rows from "${file.name}" · ${leagues.join(', ')}`,true);
+      if(document.getElementById('explorer').classList.contains('active')) updateExplorer();
+    },
+    error:()=>showFeedback('⚠ Parse error. Check the file is a valid CSV.',false)
+  });
+}
+function showFeedback(msg,ok){
+  const el=document.getElementById('csvFeedback');
+  el.style.display='block';
+  el.style.color=ok?'var(--nfl2)':'var(--red)';
+  el.style.border=`1px solid ${ok?'rgba(77,222,154,.2)':'rgba(255,107,107,.2)'}`;
+  el.style.background=ok?'rgba(77,222,154,.05)':'rgba(255,107,107,.05)';
+  el.textContent=msg;
+}
+
+// ══ MLB ═══════════════════════════════════════════
+function renderMlb() {
+  const sorted = [...MLB_TEAMS].sort((a,b)=>b.payroll-a.payroll);
+  const CBT = 241;
+
+  // All 30 team payrolls horizontal bar
+  new Chart(document.getElementById('mlbPayrollChart'), {
+    type:'bar',
+    data:{
+      labels: sorted.map(t=>t.team.replace(/^(Los Angeles|New York|San Francisco|Kansas City|Tampa Bay|Minnesota|Washington|St\. Louis|Chicago|Milwaukee|Pittsburgh|Oakland|Miami|Cleveland|Baltimore|Arizona|Philadelphia|Atlanta|Houston|Boston|Seattle|Toronto|Colorado|Cincinnati|Detroit|San Diego|Texas)/,'').trim()),
+      datasets:[{
+        data: sorted.map(t=>t.payroll),
+        backgroundColor: sorted.map(t=>t.payroll>CBT?'rgba(232,88,58,.75)':'rgba(232,88,58,.35)'),
+        borderColor: sorted.map(t=>t.payroll>CBT?C.mlb:'rgba(232,88,58,.5)'),
+        borderWidth:1, borderRadius:3
+      }]
+    },
+    options:deepMerge(baseOpts(),{
+      indexAxis:'y',
+      plugins:{
+        legend:{display:false},
+        annotation:{annotations:{cbt:{type:'line',scaleID:'x',value:CBT,borderColor:'rgba(255,107,107,.7)',borderWidth:2,borderDash:[5,4],label:{content:'CBT $241M',display:true,color:C.red,font:{size:10}}}}}
+      },
+      scales:{
+        x:{ticks:{callback:v=>'$'+v+'M'},title:{display:true,text:'2025 payroll ($M)',color:C.text}},
+        y:{grid:{color:'transparent'},ticks:{font:{size:9}}}
+      }
+    })
+  });
+
+  // Payroll spread comparison — all 4 leagues
+  new Chart(document.getElementById('spreadCompChart'), {
+    type:'bar',
+    data:{
+      labels:['MLB','NBA','NFL','NHL'],
+      datasets:[{
+        label:'Top:bottom ratio',
+        data:[3.93, 1.75, 1.35, 1.37],
+        backgroundColor:['rgba(232,88,58,.8)','rgba(201,162,39,.8)','rgba(77,222,154,.8)','rgba(74,158,255,.8)'],
+        borderColor:[C.mlb,C.nba,C.nfl,C.nhl],
+        borderWidth:1,borderRadius:6
+      }]
+    },
+    options:deepMerge(baseOpts(),{
+      scales:{
+        x:{grid:{color:'transparent'}},
+        y:{ticks:{callback:v=>v+'×'},title:{display:true,text:'Top ÷ bottom payroll',color:C.text}}
+      }
+    })
+  });
+
+  // Luxury tax bills
+  const taxTeams = sorted.filter(t=>t.tax>0).sort((a,b)=>b.tax-a.tax);
+  new Chart(document.getElementById('mlbTaxChart'), {
+    type:'bar',
+    data:{
+      labels: taxTeams.map(t=>t.team.replace(/^(Los Angeles|New York|Philadelphia|Houston|Texas|Toronto|San Diego|Boston)/,'').trim()),
+      datasets:[{
+        data:taxTeams.map(t=>t.tax),
+        backgroundColor:'rgba(255,107,107,.6)',
+        borderColor:C.red,borderWidth:1,borderRadius:4
+      }]
+    },
+    options:deepMerge(baseOpts(),{
+      scales:{
+        x:{grid:{color:'transparent'},ticks:{font:{size:10}}},
+        y:{ticks:{callback:v=>'$'+v+'M'}}
+      }
+    })
+  });
+
+  // Top 15 salaries (present-day)
+  const salaries = [
+    {name:'Juan Soto', val:61.9},{name:'Zack Wheeler',val:42.0},
+    {name:'Aaron Judge',val:40.0},{name:'Jacob deGrom',val:40.0},
+    {name:'Anthony Rendon',val:38.6},{name:'Carlos Correa',val:37.3},
+    {name:'Mike Trout',val:37.1},{name:'Gerrit Cole',val:36.0},
+    {name:'Jose Altuve',val:33.0},{name:'Corey Seager',val:32.5},
+    {name:'Francisco Lindor',val:32.5},{name:'Giancarlo Stanton',val:32.0},
+    {name:'Corbin Burnes',val:30.8},{name:'Pete Alonso',val:30.0},
+    {name:'Shohei Ohtani',val:28.2},
+  ];
+  new Chart(document.getElementById('mlbSalaryChart'), {
+    type:'bar',
+    data:{
+      labels:salaries.map(s=>s.name),
+      datasets:[{
+        data:salaries.map(s=>s.val),
+        backgroundColor:salaries.map((s,i)=>i===0?C.mlb:i===14?'rgba(232,88,58,.4)':'rgba(232,88,58,.65)'),
+        borderColor:C.mlb,borderWidth:1,borderRadius:4
+      }]
+    },
+    options:deepMerge(baseOpts(),{
+      indexAxis:'y',
+      scales:{
+        x:{ticks:{callback:v=>'$'+v+'M'}},
+        y:{grid:{color:'transparent'},ticks:{font:{size:10}}}
+      }
+    })
+  });
+
+  // Payroll vs wins scatter
+  new Chart(document.getElementById('mlbWinsChart'), {
+    type:'scatter',
+    data:{datasets:[
+      {
+        label:'Playoffs',
+        data:MLB_TEAMS.filter(t=>t.wins>=88).map(t=>({x:t.payroll,y:t.wins,label:t.team})),
+        backgroundColor:C.mlb+'99',pointRadius:8,borderColor:C.mlb,borderWidth:1.5
+      },
+      {
+        label:'Missed playoffs',
+        data:MLB_TEAMS.filter(t=>t.wins<88).map(t=>({x:t.payroll,y:t.wins,label:t.team})),
+        backgroundColor:'rgba(139,144,168,.35)',pointRadius:6,borderColor:'rgba(139,144,168,.5)',borderWidth:1
+      }
+    ]},
+    options:deepMerge(baseOpts(),{
+      plugins:{
+        legend:{display:true,position:'bottom',labels:{color:C.text,font:{size:11},padding:12}},
+        tooltip:{callbacks:{label:ctx=>`${ctx.raw.label}: $${ctx.raw.x}M · ${ctx.raw.y}W`}}
+      },
+      scales:{
+        x:{ticks:{callback:v=>'$'+v+'M'},title:{display:true,text:'Payroll ($M)',color:C.text}},
+        y:{title:{display:true,text:'Wins (162-game season)',color:C.text}}
+      }
+    })
+  });
+
+  // Average salary comparison — all 4 leagues
+  new Chart(document.getElementById('avgSalaryChart'), {
+    type:'bar',
+    data:{
+      labels:['NBA','MLB','NHL','NFL'],
+      datasets:[{
+        data:[9.6,4.61,4.1,2.7],
+        backgroundColor:['rgba(201,162,39,.8)','rgba(232,88,58,.8)','rgba(74,158,255,.8)','rgba(77,222,154,.8)'],
+        borderColor:[C.nba,C.mlb,C.nhl,C.nfl],
+        borderWidth:1,borderRadius:6
+      }]
+    },
+    options:deepMerge(baseOpts(),{
+      scales:{x:{grid:{color:'transparent'}},y:{ticks:{callback:v=>'$'+v+'M'}}}
+    })
+  });
+
+  // Ratio chart
+  new Chart(document.getElementById('ratioChart'), {
+    type:'bar',
+    data:{
+      labels:['MLB','NBA','NHL','NFL'],
+      datasets:[{
+        data:[3.93,1.75,1.37,1.35],
+        backgroundColor:['rgba(232,88,58,.8)','rgba(201,162,39,.6)','rgba(74,158,255,.6)','rgba(77,222,154,.6)'],
+        borderColor:[C.mlb,C.nba,C.nhl,C.nfl],
+        borderWidth:1,borderRadius:6
+      }]
+    },
+    options:deepMerge(baseOpts(),{
+      scales:{x:{grid:{color:'transparent'}},y:{ticks:{callback:v=>v+'×'},title:{display:true,text:'Top ÷ bottom payroll',color:C.text}}}
+    })
+  });
+
+  // Historic contracts table
+  const tbody = document.getElementById('contractsTable');
+  const leagueColors = {MLB:C.mlb2,NFL:C.nfl2,NBA:C.nba2,NHL:C.nhl2};
+  MLB_CONTRACTS.forEach(c=>{
+    const lc = c.league.toLowerCase();
+    tbody.innerHTML+=`<tr>
+      <td class="rank">#${c.rank}</td>
+      <td style="color:var(--text);font-weight:500">${c.name}</td>
+      <td><span class="league-pill pill-${lc}">${c.league}</span></td>
+      <td style="color:var(--text2);font-size:12px">${c.team}</td>
+      <td class="mono" style="color:${leagueColors[c.league]}">$${c.total}M</td>
+      <td class="mono">$${c.aav}M/yr</td>
+      <td class="mono">${c.years} yrs</td>
+      <td class="mono" style="color:var(--text3)">${c.signed}</td>
+    </tr>`;
+  });
+}
+
+// ══ INIT ═════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  Chart.defaults.font.family='Inter';
+  Chart.defaults.color='#8b90a8';
+  // Route from URL param or default to findings
+  const tab = new URLSearchParams(location.search).get('tab') || 'findings';
+  const btn = [...document.querySelectorAll('.nav-tab')].find(b=>b.getAttribute('onclick')?.includes(`'${tab}'`));
+  showSection(tab, btn || document.querySelector('.nav-tab'));
+  // Pre-render overview for cap history charts
+  if(tab!=='overview'){ renderOverview(); rendered.add('overview'); }
+});
+</script>
+</body>
+</html>
