@@ -204,8 +204,23 @@ section.active{display:block}
 ::-webkit-scrollbar-track{background:var(--bg)}
 ::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
 </style>
-</head>
-<body>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+
+/* Portfolio-wide dark editorial design. Existing analysis logic is retained. */
+:root{color-scheme:dark;--dt-bg:#10140f;--dt-panel:#1a2117;--dt-line:#35402d;--dt-text:#eef0e5;--dt-muted:#a6b29b;--dt-head:'Space Grotesk',sans-serif}
+body{background:var(--dt-bg);color:var(--dt-text);-webkit-font-smoothing:antialiased}::selection{background:#79513a;color:#fff}a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--dt-accent);outline-offset:4px}button,input,select{accent-color:var(--dt-accent)}
+.dt-nav{display:flex;align-items:center;justify-content:space-between;gap:20px;max-width:1440px;margin:auto;padding:24px 40px;border-bottom:1px solid var(--dt-line);font:11px 'DM Sans',sans-serif;color:var(--dt-muted)}.dt-nav a{color:var(--dt-text);text-decoration:none}.dt-brand{display:flex;align-items:center;gap:12px;font:500 16px var(--dt-head);letter-spacing:-.5px}.dt-brand b{background:var(--dt-accent);color:#151b12;display:grid;place-items:center;width:34px;height:35px;font:500 23px var(--dt-head);letter-spacing:-3px}.dt-nav .dt-back{font-size:11px;color:var(--dt-muted)}.dt-nav .dt-back:hover{color:var(--dt-accent)}
+.dt-editorial{display:grid;grid-template-columns:1.2fr 1fr;gap:30px;align-items:center;max-width:1360px;margin:0 auto;padding:48px 40px 45px;border-bottom:1px solid var(--dt-line)}.dt-overline{font:9px 'DM Sans',sans-serif;letter-spacing:1.6px;text-transform:uppercase;color:var(--dt-accent);margin:0 0 24px}.dt-overline:before{content:'';display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--dt-accent);margin-right:10px}.dt-editorial h1,.dt-editorial h2{font:500 clamp(44px,5.7vw,81px)/1.04 var(--dt-head);letter-spacing:-.06em;text-transform:none;color:var(--dt-text);margin:0 0 24px;border:0;padding:0}.dt-editorial h1 em,.dt-editorial h2 em{font-family:Georgia,serif;font-weight:400;color:var(--dt-accent)}.dt-editorial .dt-deck{font:13px/1.9 'DM Sans',sans-serif;color:var(--dt-muted);max-width:470px;margin:0}.dt-art{position:relative;border-left:1px solid var(--dt-line);height:300px;min-width:0}.dt-art svg{width:100%;height:100%;display:block}.dt-art-label{position:absolute;top:0;left:20px;font:8px 'DM Sans',sans-serif;letter-spacing:1.3px;color:var(--dt-muted)}.dt-art-foot{position:absolute;bottom:0;left:20px;font:8px 'DM Sans',sans-serif;letter-spacing:1.3px;color:var(--dt-accent)}
+.dt-footer{border-top:1px solid var(--dt-line);padding:25px 40px;display:flex;justify-content:space-between;gap:20px;color:var(--dt-muted);font:10px 'DM Sans',sans-serif;max-width:1440px;margin:40px auto 0}.dt-footer a{color:var(--dt-accent)}
+@media(max-width:760px){.dt-nav{padding:20px;gap:15px}.dt-nav .dt-project-label{display:none}.dt-brand{font-size:14px}.dt-editorial{grid-template-columns:1fr;padding:32px 22px;gap:24px}.dt-editorial h1,.dt-editorial h2{font-size:clamp(38px,10vw,65px)}.dt-art{height:220px;border-left:0;border-top:1px solid var(--dt-line);padding-top:12px}.dt-art-label{left:0;top:12px;font-size:7px}.dt-art-foot{left:0;font-size:7px}.dt-footer{padding:22px;flex-wrap:wrap}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{animation:none!important;transition:none!important}}
+
+:root{--dt-accent:#a7bde8}
+ :root{--bg:#10141b;--bg2:#171e29;--bg3:#202937;--bg4:#293444;--text:#eeeede;--text2:#b0bdcc;--text3:#8598ae;--accent:#afc4e6;--radius:3px;--head:'Space Grotesk',sans-serif}nav{background:#151c26f5;height:auto;min-height:58px;flex-wrap:wrap;gap:12px;padding:12px 28px}.nav-tabs{overflow:auto}.hero,.finding-card,.card,.chart-card{border-radius:2px}.hero h1,.section-header h1,#findings h1{font-family:var(--dt-head);font-weight:500;letter-spacing:-1.8px}.hero h1{font-size:43px}#findings h1{font-size:clamp(33px,4.5vw,60px)}main{padding-top:42px}.hero em{font-family:Georgia,serif!important}.dt-editorial{padding-block:36px}.dt-editorial h1{font-size:clamp(43px,5.5vw,74px)}@media(max-width:760px){nav{padding:12px 18px}.hero{padding:25px}.hero h1{font-size:31px}main{padding:25px 18px}.g2,.g3,.g4{grid-template-columns:1fr!important}}
+</style>
+<style>@media(max-width:760px){.data-table,.data-source-table{display:block;max-width:100%;overflow-x:auto}.modal-body{overflow-x:auto}.nav-tabs{max-width:100%}main>*{min-width:0}}</style></head>
+<body><div class="dt-nav"><a class="dt-brand" href="/index.html"><b>dt</b> Daiki Takizawa.</a><span class="dt-project-label">SPORTS ECONOMICS</span><a class="dt-back" href="/index.html#projects">← All projects</a></div><div class="dt-editorial"><div><p class="dt-overline">Sports economics</p><h1>Four leagues.<br><em>Different rules.</em></h1><p class="dt-deck">Sports Business Intelligence · Explore the analysis and interactive tools below.</p></div><div class="dt-art"><span class="dt-art-label">FIG. 01 / AN INDEPENDENT PERSPECTIVE</span><svg viewBox="0 0 500 300" aria-hidden="true" fill="none" style="color:#a7bde8"><ellipse cx="100" cy="150" rx="58" ry="70" stroke="currentColor" opacity=".5" transform="rotate(-15 100 150)"/><ellipse cx="200" cy="150" rx="58" ry="82" stroke="currentColor" opacity=".5" transform="rotate(-15 200 150)"/><ellipse cx="300" cy="150" rx="58" ry="94" stroke="currentColor" opacity=".5" transform="rotate(-15 300 150)"/><ellipse cx="400" cy="150" rx="58" ry="106" stroke="currentColor" opacity=".5" transform="rotate(-15 400 150)"/></svg><span class="dt-art-foot">DAIKI TAKIZAWA · RESEARCH & ANALYTICS</span></div></div>
 
 <!-- METHODOLOGY MODAL -->
 <div class="modal-overlay" id="methodModal" onclick="if(event.target===this)closeModal()">
@@ -1647,5 +1662,5 @@ document.addEventListener('DOMContentLoaded', () => {
   if(tab!=='overview'){ renderOverview(); rendered.add('overview'); }
 });
 </script>
-</body>
+<div class="dt-footer"><span>Daiki Takizawa · Sports economics</span><a href="/index.html#projects">Back to the portfolio ↗</a></div></body>
 </html>
