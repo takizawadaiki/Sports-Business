@@ -1,0 +1,5 @@
+league,system,cap_m,floor_m,tax_line_m,teams,roster,share_low,share_high,share_of,revenue_b,revenue_season,max_salary_m,max_rule
+NBA,Soft cap with a luxury tax and two aprons,154.647,139.182,187.895,30,15,49,51,basketball-related income,12.5,2024-25,54.12645,35% of the cap at signing for a 10-year veteran
+NFL,Hard cap,279.2,,,32,53,48,48.5,league revenue,21.2,2024,,No limit on one player
+NHL,Hard cap with a floor,95.5,70.6,,32,23,50,50,hockey-related revenue,7.9,2024-25,19.1,20% of the cap
+MLB,No cap; a luxury tax above a threshold,,,241,30,26,,,no fixed share,12.5,2025,,No limit on one player
